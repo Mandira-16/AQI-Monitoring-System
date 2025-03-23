@@ -1,53 +1,44 @@
-﻿body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Header styling */
-header {
-    background-color: #f8f9fa;
-    padding: 15px;
-    text-align: center;
-    width: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 100;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Ensure map container fits between header and other content */
+﻿/* Map container styling */
 #map-container {
     width: 100%;
-    height: 100vh; /* Make the map fill the viewport */
-    margin-top: 60px; /* Adjust this based on your header height */
+    height: calc(100vh - 120px); /* Subtracting header height + margins */
     position: relative;
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Full-screen map */
 #map {
     width: 100%;
     height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
+    position: relative;
 }
 
 /* Content below the map */
 .content {
-    padding: 50px;
+    padding: 20px;
     background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
 }
 
-/* Footer */
-footer {
-    background-color: #f8f9fa;
-    text-align: center;
-    padding: 15px;
-    width: 100%;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #map-container {
+        height: 400px; /* Fixed height on mobile */
+    }
+
+    .content {
+        margin-top: 20px;
+    }
+}
+
+/* Ensure navbar is always on top */
+header {
+    z-index: 1000;
+    position: relative;
 }
