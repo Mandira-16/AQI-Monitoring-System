@@ -20,3 +20,41 @@ html {
 body {
   margin-bottom: 60px;
 }
+.navbar {
+  background-color:#c5d7f2 !important;
+  padding: 15px 20px;
+}
+
+.navbar-brand {
+  color: black !important;
+}
+
+
+
+.nav-link {
+  color: rgba(0, 0, 0, 0.6) !important; /* Reduced opacity */
+  text-decoration: none; /* Remove underline */
+  font-size: 18px;
+  /*font-weight: bold;*/
+  margin-right: 20px; /* Space between links */
+  padding: 5px 10px; /* Padding inside each link for better click area */
+  transition: color 0.3s ease; /* Add a smooth color transition */
+  font-weight: 500;
+}
+
+/* On hover, increase opacity */
+.nav-link:hover {
+  color: rgba(0, 0, 0, 1)!important; /* Full opacity on hover */
+}
+
+/* On the login page, set full opacity */
+body.login-page .nav-link {
+  color: rgba(0, 0, 0, 1); /* Full opacity for login page */
+}
+
+/* Optional: Adjust the last link to avoid extra margin */
+.nav-link:last-child {
+  margin-right: 0; /* Remove margin for the last link */
+}
+
+
