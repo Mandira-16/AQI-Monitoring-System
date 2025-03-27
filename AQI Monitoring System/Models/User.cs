@@ -6,6 +6,6 @@
         public string Username { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
-        // Other user properties
+        public string Role { get; set; } // Added Role property
     }
 }
