@@ -61,6 +61,31 @@ body.login-page .nav-link {
   font-weight: 600;
 }
 
+/* styling for aqi table */
+h2 {
+  text-align: center;
+  color: #444;
+}
+
+table {
+  width:100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+th {
+  background-color: whitesmoke;
+  color: #1e3a8a;
+}
 
 
 

@@ -12,9 +12,57 @@
 </div>
 
 <div class="content mt-4">
-    <h2>More Information</h2>
-    <p>This section appears when you scroll down.</p>
-    <p>You can add air quality insights, statistics, or any other content here.</p>
+    <h2>AQI Levels</h2>
+    <table id="aqi-table">
+        <thead>
+        <tr>
+            <th>AQI Level</th>
+            <th>AQI Range</th>
+            <th>Color Code</th>
+            <th>Health Effects</th>
+            
+        </tr>
+        </thead>
+        <tbody>
+        <tr class="good">
+            <td>Good</td>
+            <td>0 - 50</td>
+            <td>🟢 Green</td>
+            <td>Air quality is satisfactory, and poses little or no risk.</td>
+            
+        </tr>
+        <tr>
+            <td>Moderate</td>
+            <td>51 - 100</td>
+            <td>🟡 Yellow</td>
+            <td>Acceptable air quality; some pollutants may affect sensitive individuals.</td>
+        </tr>
+        <tr>
+            <td>Unhealthy for Sensitive Groups</td>
+            <td>101 - 150</td>
+            <td>🟠 Orange</td>
+            <td>Children, elderly, and people with respiratory conditions may experience health effects.</td>
+        </tr>
+        <tr>
+            <td>Unhealthy</td>
+            <td>151 - 200</td>
+            <td>🔴 Red</td>
+            <td>Everyone may begin to experience adverse health effects.</td>
+        </tr>
+        <tr>
+            <td>Very Unhealthy</td>
+            <td>201 - 300</td>
+            <td>🟣 Purple</td>
+            <td>Increased health risks for everyone; emergency conditions for sensitive individuals.</td>
+        </tr>
+        <tr>
+            <td>Hazardous</td>
+            <td>301 - 500</td>
+            <td>🟤 Maroon</td>
+            <td>Serious health effects; public health warnings of emergency conditions.</td>
+        </tr>
+        </tbody>
+    </table>
 </div>
 
 @section Scripts {
@@ -37,4 +85,5 @@
             .then(response => response.json())
             .then(data => console.log(data));
     </script>
+    
 }
