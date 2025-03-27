@@ -23,5 +23,8 @@ namespace AQI_Monitoring_System.Models
         [Compare("Password", ErrorMessage = "Passwords do not match")]
         [DataType(DataType.Password)]
         public string ConfirmPassword { get; set; } // Add ? for nullable
+
+        [Required(ErrorMessage = "Role is required")]
+        public string Role { get; set; } // Added Role property
     }
 }

@@ -106,6 +106,7 @@ namespace AQI_Monitoring_System.Controllers
         // POST: /Home/Register
         [HttpPost]
         [AllowAnonymous]
+        [ValidateAntiForgeryToken]
         public IActionResult Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
@@ -126,7 +127,8 @@ namespace AQI_Monitoring_System.Controllers
                 Username = model.Username,
                 Email = model.Email,
                 // Password should be hashed before saving
-                PasswordHash = _userService.HashPassword(model.Password) // Implement this in your service
+                PasswordHash = _userService.HashPassword(model.Password),
+                Role = model.Role
             };
 
             _userService.AddUser(user); // Assuming you have this method in IUserService
