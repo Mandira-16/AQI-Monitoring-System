@@ -25,6 +25,7 @@
                             </div>
                         }
                         <form id="loginForm" method="post" asp-controller="Home" asp-action="Login">
+                            @Html.AntiForgeryToken()
                             <div class="form-group mb-3">
                                 <label for="Username">Username</label>
                                 <input type="text" class="form-control" id="Username" name="Username" placeholder="Enter username" required>
@@ -53,7 +54,7 @@
                         </form>
                     </div>
                     <div class="card-footer text-center">
-                        <p class="mb-0">Don't have an account? <a asp-controller="Home" asp-action="Signup">Register</a></p>
+                        <p class="mb-0">Don't have an account? <a asp-controller="Home" asp-action="Register">Register</a>></p>
                     </div>
                 </div>
             </div>
