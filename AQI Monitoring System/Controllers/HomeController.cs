@@ -1,7 +1,11 @@
 using AQI_Monitoring_System.Models;
 using AQI_Monitoring_System.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace AQI_Monitoring_System.Controllers
 {
@@ -26,6 +30,7 @@ namespace AQI_Monitoring_System.Controllers
             return View();
         }
 
+        [AllowAnonymous] // Added this to redirect to register page which was causing an error 
         public IActionResult Login()
         {
             return View();
@@ -33,7 +38,9 @@ namespace AQI_Monitoring_System.Controllers
 
         // POST: /Home/Login
         [HttpPost]
-        public IActionResult Login(LoginViewModel model)
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             // Clear any previous error messages
             ViewData["UsernameError"] = null;
@@ -72,12 +79,65 @@ namespace AQI_Monitoring_System.Controllers
                 TempData["ErrorMessage"] = "Invalid username or password";
                 return View(model);
             }
-
-            // Login successful - create authentication cookie, etc.
-            // For a real implementation, you would use something like:
-            // HttpContext.SignInAsync(...)
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            };
+            var identity = new ClaimsIdentity(claims, "CookieAuth");
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
             return RedirectToAction("Index", "Home");
+        }
+
+
+        // GET: /Home/Register
+        [AllowAnonymous]
+        public IActionResult Register()
+        {
+            _logger.LogInformation("Register GET action called"); // Added this line to test
+            return View(new RegisterViewModel());
+        }
+
+        // POST: /Home/Register
+        [HttpPost]
+        [AllowAnonymous]
+        public IActionResult Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Check if username already exists
+            if (_userService.UsernameExists(model.Username))
+            {
+                ModelState.AddModelError("Username", "Username is already taken");
+                return View(model);
+            }
+
+            // Create new user (assuming _userService has a method to add a user)
+            var user = new User
+            {
+                Username = model.Username,
+                Email = model.Email,
+                // Password should be hashed before saving
+                PasswordHash = _userService.HashPassword(model.Password) // Implement this in your service
+            };
+
+            _userService.AddUser(user); // Assuming you have this method in IUserService
+
+            TempData["SuccessMessage"] = "Registration successful! Please log in.";
+            return RedirectToAction("Login", "Home");
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public IActionResult CheckUsername(string username)
+        {
+            var exists = _userService.UsernameExists(username);
+            return Json(new { exists = exists });
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -85,5 +145,6 @@ namespace AQI_Monitoring_System.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
     }
 }
