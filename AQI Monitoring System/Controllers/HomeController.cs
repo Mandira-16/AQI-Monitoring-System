@@ -22,17 +22,20 @@ namespace AQI_Monitoring_System.Controllers
 
         public IActionResult Index()
         {
+            ViewData["ActivePage"] = "Home";
             return View();
         }
 
         public IActionResult Privacy()
         {
+            ViewData["ActivePage"] = "Privacy";
             return View();
         }
 
         [AllowAnonymous] // Added this to redirect to register page which was causing an error 
         public IActionResult Login()
         {
+            ViewData["ActivePage"] = "Login";
             return View();
         }
 
