@@ -75,11 +75,13 @@
             const usernameField = $('#Username');
             const passwordField = $('#Password');
             const confirmPasswordField = $('#ConfirmPassword');
+            const emailField = $('#Email'); // Added email field for validation
             const registerButton = $('#registerButton');
             let isUsernameUnique = false;
 
             // Real-time validation as user types
             usernameField.on('input', validateUsername);
+            emailField.on('input', validateEmail); // Added email validation on input
             passwordField.on('input', validatePassword);
             confirmPasswordField.on('input', validateConfirmPassword);
 
@@ -123,6 +125,28 @@
                         updateButtonState();
                     }
                 });
+
+                return true;
+            }
+
+            // Added email validation function
+            function validateEmail() {
+                const email = emailField.val().trim();
+                const emailError = $('#emailError');
+                emailField.removeClass('is-invalid');
+                emailError.text('');
+
+                if (email === '') {
+                    emailField.addClass('is-invalid');
+                    emailError.text('Email is required');
+                    return false;
+                }
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(email)) {
+                    emailField.addClass('is-invalid');
+                    emailError.text('Invalid email address');
+                    return false;
+                }
 
                 return true;
             }
@@ -187,6 +211,7 @@
 
             function validateForm() {
                 const isUsernameValid = validateUsername();
+                const isEmailValid = validateEmail(); // Added email validation to the form
                 const isPasswordValid = validatePassword();
                 const isConfirmPasswordValid = validateConfirmPassword();
 
@@ -198,9 +223,10 @@
                 registerButton.prop('disabled', !isFormValid);
             }
 
-            // Initial validation
-            updateButtonState();
+            // Removed the initial call to updateButtonState() to prevent validation on page load
+            // Instead, bind updateButtonState to input events after user starts typing
             usernameField.on('input', updateButtonState);
+            emailField.on('input', updateButtonState);
             passwordField.on('input', updateButtonState);
             confirmPasswordField.on('input', updateButtonState);
         });
