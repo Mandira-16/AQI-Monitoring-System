@@ -1,30 +1,44 @@
-﻿using AQI_Monitoring_System.Models;
-using AQI_Monitoring_System.Data; // Adjust namespace for your DbContext
+﻿using AQI_Monitoring_System.Data;
+using AQI_Monitoring_System.Models;
+using BCrypt.Net;
+using System.Linq;
 
 namespace AQI_Monitoring_System.Services
 {
     public class UserService : IUserService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _dbContext;
 
-        public UserService(ApplicationDbContext context)
+        public UserService(ApplicationDbContext dbContext)
         {
-            _context = context;
+            _dbContext = dbContext;
         }
 
         public User GetUserByUsername(string username)
         {
-            return _context.Users.FirstOrDefault(u => u.Username == username);
+            return _dbContext.Users.FirstOrDefault(u => u.Username == username);
         }
 
         public bool VerifyPassword(User user, string password)
         {
-            // In a real application, use a proper password verification method
-            // For example with BCrypt:
-            // return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            if (user == null || string.IsNullOrEmpty(user.PasswordHash)) return false;
+            return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+        }
 
-            // Simple example (NOT for production)
-            return user.PasswordHash == password;
+        public bool UsernameExists(string username)
+        {
+            return _dbContext.Users.Any(u => u.Username == username);
+        }
+
+        public string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password);
+        }
+
+        public void AddUser(User user)
+        {
+            _dbContext.Users.Add(user);
+            _dbContext.SaveChanges();
         }
     }
 }
