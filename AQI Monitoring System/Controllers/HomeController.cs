@@ -18,16 +18,19 @@ namespace AQI_Monitoring_System.Controllers
 
         public IActionResult Index()
         {
+            ViewData["ActivePage"] = "Home";
             return View();
         }
 
         public IActionResult Privacy()
         {
+            ViewData["ActivePage"] = "Privacy";
             return View();
         }
 
         public IActionResult Login()
         {
+            ViewData["ActivePage"] = "Login";
             return View();
         }
 
