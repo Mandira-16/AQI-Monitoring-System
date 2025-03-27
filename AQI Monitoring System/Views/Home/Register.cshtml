@@ -54,6 +54,17 @@
                                 <div id="confirmPasswordError" class="error-message"></div>
                                 <span asp-validation-for="ConfirmPassword" class="error-message"></span>
                             </div>
+                            <!-- Added Role selection dropdown -->
+                            <div class="form-group mb-3">
+                                <label asp-for="Role">Role</label>
+                                <select asp-for="Role" class="form-control">
+                                    <option value="">Select a role</option>
+                                    <option value="User">User</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                                <div id="roleError" class="error-message"></div>
+                                <span asp-validation-for="Role" class="error-message"></span>
+                            </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary" id="registerButton">Register</button>
                             </div>
@@ -76,23 +87,42 @@
             const passwordField = $('#Password');
             const confirmPasswordField = $('#ConfirmPassword');
             const emailField = $('#Email'); // Added email field for validation
+            const roleField = $('#Role'); // Added role field
             const registerButton = $('#registerButton');
             let isUsernameUnique = false;
 
-            // Real-time validation as user types
-            usernameField.on('input', validateUsername);
-            emailField.on('input', validateEmail); // Added email validation on input
-            passwordField.on('input', validatePassword);
-            confirmPasswordField.on('input', validateConfirmPassword);
+            // Track whether each field has been touched
+            let touched = {
+                username: false,
+                email: false,
+                password: false,
+                confirmPassword: false,
+                role: false
+            };
+
+            // Mark field as touched on input or blur
+            usernameField.on('input blur', () => { touched.username = true; validateUsername(); updateButtonState(); });
+            emailField.on('input blur', () => { touched.email = true; validateEmail(); updateButtonState(); });
+            passwordField.on('input blur', () => { touched.password = true; validatePassword(); updateButtonState(); });
+            confirmPasswordField.on('input blur', () => { touched.confirmPassword = true; validateConfirmPassword(); updateButtonState(); });
+            roleField.on('change blur', () => { touched.role = true; validateRole(); updateButtonState(); });
 
             // Form submission validation
             $('#registerForm').on('submit', function (e) {
+                // Mark all fields as touched on submit
+                touched.username = true;
+                touched.email = true;
+                touched.password = true;
+                touched.confirmPassword = true;
+                touched.role = true;
+
                 if (!validateForm()) {
                     e.preventDefault();
                 }
             });
 
             function validateUsername() {
+                if (!touched.username) return true; // Skip validation if not touched
                 const username = usernameField.val().trim();
                 const usernameError = $('#usernameError');
                 usernameField.removeClass('is-invalid');
@@ -131,6 +161,7 @@
 
             // Added email validation function
             function validateEmail() {
+                if (!touched.email) return true; // Skip validation if not touched
                 const email = emailField.val().trim();
                 const emailError = $('#emailError');
                 emailField.removeClass('is-invalid');
@@ -152,6 +183,7 @@
             }
 
             function validatePassword() {
+                if (!touched.password) return true; // Skip validation if not touched
                 const password = passwordField.val().trim();
                 const passwordError = $('#passwordError');
                 passwordField.removeClass('is-invalid');
@@ -189,6 +221,7 @@
             }
 
             function validateConfirmPassword() {
+                if (!touched.confirmPassword) return true; // Skip validation if not touched
                 const password = passwordField.val().trim();
                 const confirmPassword = confirmPasswordField.val().trim();
                 const confirmPasswordError = $('#confirmPasswordError');
@@ -209,26 +242,37 @@
                 return true;
             }
 
+            function validateRole() {
+                if (!touched.role) return true; // Skip validation if not touched
+
+                const role = roleField.val();
+                const roleError = $('#roleError');
+                roleField.removeClass('is-invalid');
+                roleError.text('');
+
+                if (role === '') {
+                    roleField.addClass('is-invalid');
+                    roleError.text('Role is required');
+                    return false;
+                }
+
+                return true;
+            }
+
             function validateForm() {
                 const isUsernameValid = validateUsername();
                 const isEmailValid = validateEmail(); // Added email validation to the form
                 const isPasswordValid = validatePassword();
                 const isConfirmPasswordValid = validateConfirmPassword();
+                const isRoleValid = validateRole();
 
-                return isUsernameValid && isPasswordValid && isConfirmPasswordValid && isUsernameUnique;
+                return isUsernameValid && isPasswordValid && isConfirmPasswordValid && isRoleValid && isUsernameUnique;
             }
 
             function updateButtonState() {
                 const isFormValid = validateForm();
                 registerButton.prop('disabled', !isFormValid);
             }
-
-            // Removed the initial call to updateButtonState() to prevent validation on page load
-            // Instead, bind updateButtonState to input events after user starts typing
-            usernameField.on('input', updateButtonState);
-            emailField.on('input', updateButtonState);
-            passwordField.on('input', updateButtonState);
-            confirmPasswordField.on('input', updateButtonState);
         });
     </script>
 </body>
