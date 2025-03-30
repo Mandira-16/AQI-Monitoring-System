@@ -45,7 +45,7 @@ namespace AQI_Monitoring_System.Services
             return _dbContext.Users.ToList();
         }
 
-        public User GetUserById(int id)
+        public User? GetUserById(int id)
         {
             return _dbContext.Users.Find(id);
         }
