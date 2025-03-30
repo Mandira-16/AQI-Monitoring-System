@@ -13,7 +13,7 @@ namespace AQI_Monitoring_System.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Sensor> Sensors { get; set; }
         public DbSet<AqiReading> AqiReadings { get; set; }
-
+        public DbSet<AlertThreshold> AlertThresholds { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Map the User entity to a table named "User"
