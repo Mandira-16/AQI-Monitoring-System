@@ -31,8 +31,7 @@ namespace AQI_Monitoring_System.Controllers
             ViewData["ActivePage"] = "Privacy";
             return View();
         }
-
-        [AllowAnonymous] // Added this to redirect to register page which was causing an error 
+        
         public IActionResult Login()
         {
             ViewData["ActivePage"] = "Login";
@@ -41,7 +40,6 @@ namespace AQI_Monitoring_System.Controllers
 
         // POST: /Home/Login
         [HttpPost]
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
@@ -82,21 +80,32 @@ namespace AQI_Monitoring_System.Controllers
                 TempData["ErrorMessage"] = "Invalid username or password";
                 return View(model);
             }
+
+            // Add role to claims
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role)
             };
-            var identity = new ClaimsIdentity(claims, "CookieAuth");
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-            return RedirectToAction("Index", "Home");
+            // Redirect based on role
+            if (user.Role == "Admin")
+            {
+                return RedirectToAction("MonitorAdminDashboard", "Home");
+            }
+            else
+            {
+                return RedirectToAction("Index", "Home"); // For now, redirect non-Admins to the Index page
+            }
         }
 
 
         // GET: /Home/Register
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin")] // Restrict to Admins only
         public IActionResult Register()
         {
             _logger.LogInformation("Register GET action called"); // Added this line to test
@@ -105,7 +114,7 @@ namespace AQI_Monitoring_System.Controllers
 
         // POST: /Home/Register
         [HttpPost]
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin")] // Restrict to Admins only
         [ValidateAntiForgeryToken]
         public IActionResult Register(RegisterViewModel model)
         {
@@ -138,7 +147,6 @@ namespace AQI_Monitoring_System.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public IActionResult CheckUsername(string username)
         {
             var exists = _userService.UsernameExists(username);
@@ -151,5 +159,18 @@ namespace AQI_Monitoring_System.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
+        [Authorize(Roles = "Admin")]
+        public IActionResult MonitorAdminDashboard()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Home");
+        }
     }
 }
