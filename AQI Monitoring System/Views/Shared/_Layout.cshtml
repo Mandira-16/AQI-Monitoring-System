@@ -21,13 +21,13 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav ms-auto"> <!--Added ms-auto-->
                         <li class="nav-item">
-                            <a class="nav-link @(ViewData["ActivePage"] == "Home" ? "active text-white" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link @((ViewData["ActivePage"] as string) == "Home" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewData["ActivePage"] == "Privacy" ? "active text-white" : "")" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link @((ViewData["ActivePage"] as string) == "Privacy" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewData["ActivePage"] == "Login" ? "active text-white" : "")" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
+                            <a class="nav-link @((ViewData["ActivePage"] as string) == "Login" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
                         </li>
                     </ul>
                 </div>
