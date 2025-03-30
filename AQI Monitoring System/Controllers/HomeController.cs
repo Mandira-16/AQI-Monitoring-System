@@ -173,17 +173,32 @@ namespace AQI_Monitoring_System.Controllers
         {
             // Fetch all sensors for the "All Registered Sensors" table
             var sensors = _sensorService.GetAllSensors();
-            ViewBag.ActiveSensorsCount = sensors?.Count(s => s.IsActive) ?? 0; // Null-safe
+            ViewBag.ActiveSensorsCount = sensors?.Count(s => s.IsActive) ?? 0;
             ViewBag.SimulationStatus = _simulationService.IsRunning ? "Running" : "Stopped";
 
-            // Fetch recent AQI readings (e.g., the latest reading for each sensor)
+            // Fetch recent AQI readings
             var recentReadings = _dbContext.AqiReadings
                 .Include(r => r.Sensor)
                 .GroupBy(r => r.SensorId)
                 .Select(g => g.OrderByDescending(r => r.RecordedAt).FirstOrDefault())
                 .ToList();
 
+            // Check for alerts
+            var thresholds = _dbContext.AlertThresholds.ToList();
+            var alerts = recentReadings
+                .Where(r => r.Sensor != null && r.Sensor.IsActive)
+                .Select(r => new
+                {
+                    SensorId = r.Sensor?.SensorId ?? "Unknown",
+                    Aqi = r.Aqi,
+                    Threshold = thresholds.FirstOrDefault(t => r.Aqi >= t.MinAqi && r.Aqi <= t.MaxAqi)
+                })
+                .Where(a => a.Threshold != null && a.Aqi > 100)
+                .Select(a => $"Sensor {a.SensorId} has {a.Threshold.Category} air quality (AQI: {a.Aqi})")
+                .ToList();
+
             ViewBag.RecentReadings = recentReadings;
+            ViewBag.Alerts = alerts;
             return View(sensors);
         }
 
@@ -368,6 +383,55 @@ namespace AQI_Monitoring_System.Controllers
             _userService.DeleteUser(id); // Assuming this method exists in IUserService
             TempData["SuccessMessage"] = $"User {user.Username} deleted successfully!";
             return RedirectToAction("ManageUsers");
+        }
+        // GET: Display form to set thresholds (could be part of MonitorAdminDashboard or a separate page)
+        [Authorize(Roles = "Admin")]
+        public IActionResult ConfigureAlerts()
+        {
+            var thresholds = _dbContext.AlertThresholds.ToList();
+            if (!thresholds.Any())
+            {
+                // Seed default thresholds if none exist
+                thresholds = new List<AlertThreshold>
+        {
+            new AlertThreshold { Category = "Good", MinAqi = 0, MaxAqi = 50, Color = "green" },
+            new AlertThreshold { Category = "Moderate", MinAqi = 51, MaxAqi = 100, Color = "yellow" },
+            new AlertThreshold { Category = "Unhealthy for Sensitive Groups", MinAqi = 101, MaxAqi = 150, Color = "orange" },
+            new AlertThreshold { Category = "Unhealthy", MinAqi = 151, MaxAqi = 200, Color = "red" },
+            new AlertThreshold { Category = "Very Unhealthy", MinAqi = 201, MaxAqi = 300, Color = "purple" },
+            new AlertThreshold { Category = "Hazardous", MinAqi = 301, MaxAqi = 500, Color = "maroon" }
+        };
+                _dbContext.AlertThresholds.AddRange(thresholds);
+                _dbContext.SaveChanges();
+            }
+            return View(thresholds);
+        }
+
+        // POST: Save updated thresholds
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult ConfigureAlerts(List<AlertThreshold> thresholds)
+        {
+            if (ModelState.IsValid)
+            {
+                foreach (var threshold in thresholds)
+                {
+                    var existing = _dbContext.AlertThresholds.Find(threshold.Id);
+                    if (existing != null)
+                    {
+                        existing.Category = threshold.Category;
+                        existing.MinAqi = threshold.MinAqi;
+                        existing.MaxAqi = threshold.MaxAqi;
+                        existing.Color = threshold.Color;
+                        _dbContext.AlertThresholds.Update(existing);
+                    }
+                }
+                _dbContext.SaveChanges();
+                TempData["SuccessMessage"] = "Alert thresholds updated successfully!";
+                return RedirectToAction("MonitorAdminDashboard");
+            }
+            return View(thresholds);
         }
     }
 }
