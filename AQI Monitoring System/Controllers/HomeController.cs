@@ -311,5 +311,63 @@ namespace AQI_Monitoring_System.Controllers
             TempData["SuccessMessage"] = $"Sensor {id} deactivated successfully!";
             return RedirectToAction("MonitorAdminDashboard");
         }
+
+        // In HomeController.cs
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult ManageUsers()
+        {
+            var users = _userService.GetAllUsers(); // Assuming this method exists in IUserService
+            return View(users);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult EditUser(int id)
+        {
+            var user = _userService.GetUserById(id); // Assuming this method exists
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditUser(int id, string username, string email, string role)
+        {
+            var user = _userService.GetUserById(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Update user properties (password unchanged unless explicitly updated)
+            user.Username = username;
+            user.Email = email;
+            user.Role = role;
+
+            _userService.UpdateUser(user); // Assuming this method exists in IUserService
+            TempData["SuccessMessage"] = "User updated successfully!";
+            return RedirectToAction("ManageUsers");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteUser(int id)
+        {
+            var user = _userService.GetUserById(id);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("ManageUsers");
+            }
+
+            _userService.DeleteUser(id); // Assuming this method exists in IUserService
+            TempData["SuccessMessage"] = $"User {user.Username} deleted successfully!";
+            return RedirectToAction("ManageUsers");
+        }
     }
 }
