@@ -1,4 +1,5 @@
-﻿@{
+﻿@model List<AQI_Monitoring_System.Models.Sensor>
+@{
     ViewData["Title"] = "Monitoring Admin Dashboard";
 }
 
@@ -8,25 +9,31 @@
     <meta charset="utf-8" />
     <title>Monitoring Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/LoginStyleSheet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         .dashboard-container {
             margin-top: 50px;
         }
+
         .dashboard-card {
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .btn-action {
             margin: 10px 0;
+        }
+
+        .form-section {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container dashboard-container">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <div class="card dashboard-card">
                     <div class="card-header">
                         <h4 class="text-center">Monitoring Admin Dashboard</h4>
@@ -41,11 +48,161 @@
                                 <button type="submit" class="btn btn-secondary">Logout</button>
                             </form>
                         </div>
-                        <!-- Placeholder for future features -->
+
+                        <!-- Success/Error Messages -->
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                        }
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+                        }
+
+                        <!-- Add Sensor Form -->
+                        <div class="form-section">
+                            <h5>Register New Sensor</h5>
+                            <form asp-controller="Home" asp-action="AddSensor" method="post">
+                                <div class="row">
+                                    <div class="col-md-3 mb-3">
+                                        <label for="SensorId" class="form-label">Sensor ID</label>
+                                        <input type="text" class="form-control" id="SensorId" name="SensorId" required />
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label for="Location" class="form-label">Location</label>
+                                        <input type="text" class="form-control" id="Location" name="Location" required />
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label for="Latitude" class="form-label">Latitude</label>
+                                        <input type="number" step="any" class="form-control" id="Latitude" name="Latitude" required />
+                                    </div>
+                                    <div class="col-md-2 mb-3">
+                                        <label for="Longitude" class="form-label">Longitude</label>
+                                        <input type="number" step="any" class="form-control" id="Longitude" name="Longitude" required />
+                                    </div>
+                                    <div class="col-md-2 mb-3 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-success w-100">Add Sensor</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- System Overview -->
                         <div class="mt-4">
                             <h5>System Overview</h5>
-                            <p>More features coming soon (e.g., sensor management, system status, alerts)...</p>
+                            <p>Active Sensors: @ViewBag.ActiveSensorsCount</p>
+                            <p>Simulation Status: @ViewBag.SimulationStatus</p>
+                            <div class="d-grid btn-action">
+                                @if (ViewBag.SimulationStatus == "Stopped")
+                                {
+                                    <form asp-controller="Home" asp-action="StartSimulation" method="post">
+                                        <button type="submit" class="btn btn-success">Start Simulation</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-controller="Home" asp-action="StopSimulation" method="post">
+                                        <button type="submit" class="btn btn-danger">Stop Simulation</button>
+                                    </form>
+                                }
+                            </div>
                         </div>
+
+                        <!-- Active Sensors Readings Table -->
+                        <div class="mt-4">
+                            <h6>Active Sensors Readings</h6>
+                            @if (ViewBag.RecentReadings != null && ViewBag.RecentReadings.Count > 0)
+                            {
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Sensor ID</th>
+                                            <th>Location</th>
+                                            <th>AQI</th>
+                                            <th>Recorded At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var reading in ViewBag.RecentReadings)
+                                        {
+                                            if (reading.Sensor?.IsActive == true)
+                                            {
+                                                <tr>
+                                                    <td>@(reading.Sensor?.SensorId ?? "Unknown")</td>
+                                                    <td>@(reading.Sensor?.Location ?? "Unknown")</td>
+                                                    <td style="@GetAqiColor(reading.Aqi)">@reading.Aqi</td>
+                                                    <td>@reading.RecordedAt.ToString("MMM dd, yyyy h:mm tt")</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <p>No recent readings from active sensors available.</p>
+                            }
+                        </div>
+
+                        @functions {
+                            string GetAqiColor(int aqi)
+                            {
+                                if (aqi <= 50) return "color: green;";
+                                if (aqi <= 100) return "color: yellow;";
+                                if (aqi <= 150) return "color: orange;";
+                                return "color: red;";
+                            }
+                        }
+                    </div>
+                    <!-- All Sensors Table -->
+                    <div class="mt-4">
+                        <h6>All Registered Sensors</h6>
+                        @if (Model != null && Model.Any())
+                        {
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Sensor ID</th>
+                                        <th>Location</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Is Active</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var sensor in Model)
+                                    {
+                                        <tr>
+                                            <td>@sensor.SensorId</td>
+                                            <td>@sensor.Location</td>
+                                            <td>@sensor.Latitude</td>
+                                            <td>@sensor.Longitude</td>
+                                            <td>@(sensor.IsActive ? "Yes" : "No")</td>
+                                            <td>
+                                                <a asp-controller="Home" asp-action="EditSensor" asp-route-id="@sensor.SensorId" class="btn btn-sm btn-primary me-1">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form asp-controller="Home" asp-action="DeleteSensor" asp-route-id="@sensor.SensorId" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this sensor?');">
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-controller="Home" asp-action="DeactivateSensor" asp-route-id="@sensor.SensorId" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to deactivate this physics this sensor?');">
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <p>No sensors registered in the system.</p>
+                        }
                     </div>
                 </div>
             </div>
