@@ -23,10 +23,13 @@
                     </div>
                     <div class="card-body">
                         <div class="admin-info-section">
-                            <p>Welcome, @User.Identity.Name! You are logged in as an Admin.</p>
+                            <h5>Welcome, @User.Identity.Name! You are logged in as an Admin.</h5>
                             <div class="admin-actions">
                                 <div class="d-grid btn-action">
                                     <a asp-controller="Home" asp-action="Register" class="btn btn-primary">Register New User</a>
+                                </div>
+                                <div class="d-grid btn-action">
+                                    <a asp-controller="Home" asp-action="ManageUsers" class="btn btn-info">Manage Users</a>
                                 </div>
                                 <div class="d-grid btn-action">
                                     <form asp-controller="Home" asp-action="Logout" method="post">
