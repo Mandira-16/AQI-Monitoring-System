@@ -14,7 +14,7 @@ namespace AQI_Monitoring_System.Services
             _dbContext = dbContext;
         }
 
-        public User GetUserByUsername(string username)
+        public User? GetUserByUsername(string username)
         {
             return _dbContext.Users.FirstOrDefault(u => u.Username == username);
         }
