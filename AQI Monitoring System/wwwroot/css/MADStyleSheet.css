@@ -1,0 +1,61 @@
+﻿.dashboard-container {
+    margin-top: 50px;
+}
+
+.dashboard-card {
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.btn-action {
+    margin: 10px 0;
+}
+
+.form-section {
+    margin-top: 20px;
+}
+
+.section-heading {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* AQI Background Colors - More explicit with !important to ensure they apply */
+td.aqi-good {
+    background-color: #a8e05f !important;
+    color: black !important;
+    font-weight: bold !important;
+}
+
+td.aqi-moderate {
+    background-color: #fdd64b !important;
+    color: black !important;
+    font-weight: bold !important;
+}
+
+td.aqi-unhealthy-sensitive {
+    background-color: #ff9b57 !important;
+    color: black !important;
+    font-weight: bold !important;
+}
+
+td.aqi-unhealthy {
+    background-color: #fe6a69 !important;
+    color: black !important;
+    font-weight: bold !important;
+}
+
+td.aqi-very-unhealthy {
+    background-color: #a97abc !important;
+    color: black !important;
+    font-weight: bold !important;
+}
+
+td.aqi-hazardous {
+    background-color: #a87383 !important;
+    color: black !important;
+    font-weight: bold !important;
+}
