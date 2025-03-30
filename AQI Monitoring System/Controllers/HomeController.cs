@@ -1,9 +1,11 @@
+using AQI_Monitoring_System.Data;
 using AQI_Monitoring_System.Models;
 using AQI_Monitoring_System.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -13,11 +15,18 @@ namespace AQI_Monitoring_System.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IUserService _userService;
+        private readonly ISensorService _sensorService; 
+        private readonly AqiSimulationService _simulationService;
+        private readonly ApplicationDbContext _dbContext;
 
-        public HomeController(ILogger<HomeController> logger, IUserService userService)
+        public HomeController(ILogger<HomeController> logger, IUserService userService,
+            ISensorService sensorService, AqiSimulationService simulationService, ApplicationDbContext dbContext)
         {
             _logger = logger;
             _userService = userService;
+            _sensorService = sensorService;
+            _simulationService = simulationService;
+            _dbContext = dbContext;
         }
 
         public IActionResult Index()
@@ -162,7 +171,20 @@ namespace AQI_Monitoring_System.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult MonitorAdminDashboard()
         {
-            return View();
+            // Fetch all sensors for the "All Registered Sensors" table
+            var sensors = _sensorService.GetAllSensors();
+            ViewBag.ActiveSensorsCount = sensors?.Count(s => s.IsActive) ?? 0; // Null-safe
+            ViewBag.SimulationStatus = _simulationService.IsRunning ? "Running" : "Stopped";
+
+            // Fetch recent AQI readings (e.g., the latest reading for each sensor)
+            var recentReadings = _dbContext.AqiReadings
+                .Include(r => r.Sensor)
+                .GroupBy(r => r.SensorId)
+                .Select(g => g.OrderByDescending(r => r.RecordedAt).FirstOrDefault())
+                .ToList();
+
+            ViewBag.RecentReadings = recentReadings;
+            return View(sensors);
         }
 
         [HttpPost]
@@ -171,6 +193,123 @@ namespace AQI_Monitoring_System.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Home");
+        }
+
+        [Authorize(Roles = "Admin")]
+        public IActionResult EditSensor(string id)
+        {
+            var sensor = _sensorService.GetSensorById(id);
+            if (sensor == null)
+            {
+                return NotFound();
+            }
+            return View(sensor);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult StartSimulation()
+        {
+            _simulationService.StartSimulation();
+            return RedirectToAction("MonitorAdminDashboard");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult StopSimulation()
+        {
+            _simulationService.StopSimulation();
+            return RedirectToAction("MonitorAdminDashboard");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddSensor(string sensorId, string location, double latitude, double longitude)
+        {
+            // Basic validation
+            if (string.IsNullOrEmpty(sensorId) || string.IsNullOrEmpty(location))
+            {
+                TempData["ErrorMessage"] = "Sensor ID and Location are required.";
+                return RedirectToAction("MonitorAdminDashboard");
+            }
+
+            // Check if SensorId is unique (optional but recommended)
+            if (_sensorService.GetAllSensors().Any(s => s.SensorId == sensorId))
+            {
+                TempData["ErrorMessage"] = "A sensor with this Sensor ID already exists.";
+                return RedirectToAction("MonitorAdminDashboard");
+            }
+
+            // Create and add the sensor
+            var sensor = new Sensor
+            {
+                SensorId = sensorId,
+                Location = location,
+                Latitude = latitude,
+                Longitude = longitude,
+                IsActive = true // New sensors start as active
+            };
+
+            _sensorService.AddSensor(sensor);
+            TempData["SuccessMessage"] = $"Sensor {sensorId} added successfully!";
+            return RedirectToAction("MonitorAdminDashboard");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditSensor(string sensorId, string location, double latitude, double longitude, bool isActive)
+        {
+            var sensor = _sensorService.GetSensorById(sensorId);
+            if (sensor == null)
+            {
+                return NotFound();
+            }
+
+            // Update sensor properties
+            sensor.Location = location;
+            sensor.Latitude = latitude;
+            sensor.Longitude = longitude;
+            sensor.IsActive = isActive;
+
+            _sensorService.UpdateSensor(sensor); // Assuming this method exists in ISensorService
+            TempData["SuccessMessage"] = "Sensor updated successfully!";
+            return RedirectToAction("MonitorAdminDashboard");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteSensor(string id)
+        {
+            var sensor = _sensorService.GetSensorById(id);
+            if (sensor == null)
+            {
+                TempData["ErrorMessage"] = "Sensor not found.";
+                return RedirectToAction("MonitorAdminDashboard");
+            }
+
+            _sensorService.DeleteSensor(id);
+            TempData["SuccessMessage"] = $"Sensor {id} deleted successfully!";
+            return RedirectToAction("MonitorAdminDashboard");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeactivateSensor(string id)
+        {
+            var sensor = _sensorService.GetSensorById(id);
+            if (sensor == null)
+            {
+                TempData["ErrorMessage"] = "Sensor not found.";
+                return RedirectToAction("MonitorAdminDashboard");
+            }
+
+            _sensorService.DeactivateSensor(id);
+            TempData["SuccessMessage"] = $"Sensor {id} deactivated successfully!";
+            return RedirectToAction("MonitorAdminDashboard");
         }
     }
 }
