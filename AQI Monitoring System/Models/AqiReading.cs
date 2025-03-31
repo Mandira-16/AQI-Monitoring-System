@@ -8,5 +8,6 @@ namespace AQI_Monitoring_System.Models
         public int Aqi { get; set; }
         public DateTime RecordedAt { get; set; }
         public virtual Sensor? Sensor { get; set; } // Navigation property
+        //public double? Pm25 { get; set; } // Added for pollutant support
     }
 }
