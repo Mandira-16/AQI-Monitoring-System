@@ -479,5 +479,25 @@ namespace AQI_Monitoring_System.Controllers
             }
             return View(thresholds);
         }
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult PurgeOldReadings()
+        {
+            var cutoff = DateTime.UtcNow.AddMonths(-1); // Readings older than 1 month
+            var oldReadings = _dbContext.AqiReadings.Where(r => r.RecordedAt < cutoff);
+            int count = oldReadings.Count();
+            if (count > 0)
+            {
+                _dbContext.AqiReadings.RemoveRange(oldReadings);
+                _dbContext.SaveChanges();
+                TempData["SuccessMessage"] = $"{count} old readings purged successfully.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "No readings older than 1 month to purge.";
+            }
+            return RedirectToAction("MonitorAdminDashboard");
+        }
     }
 }
