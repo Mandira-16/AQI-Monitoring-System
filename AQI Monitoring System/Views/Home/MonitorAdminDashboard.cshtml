@@ -113,6 +113,11 @@
                             <div class="d-grid btn-action">
                                 <a asp-controller="Home" asp-action="ConfigureSimulation" class="btn btn-primary">Configure Simulation</a>
                             </div>
+                            <div class="d-grid btn-action">
+                                <form asp-controller="Home" asp-action="PurgeOldReadings" method="post" onsubmit="return confirm('Are you sure you want to purge readings older than 1 month?');">
+                                    <button type="submit" class="btn btn-danger">Purge Old Readings</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
