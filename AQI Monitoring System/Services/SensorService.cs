@@ -33,8 +33,16 @@ namespace AQI_Monitoring_System.Services
 
         public void UpdateSensor(Sensor sensor)
         {
-            _dbContext.Sensors.Update(sensor);
-            _dbContext.SaveChanges();
+            var existingSensor = _dbContext.Sensors.Find(sensor.SensorId);
+            if (existingSensor != null)
+            {
+                existingSensor.Location = sensor.Location;
+                existingSensor.Latitude = sensor.Latitude;
+                existingSensor.Longitude = sensor.Longitude;
+                existingSensor.IsActive = sensor.IsActive;
+                _dbContext.Sensors.Update(existingSensor);
+                _dbContext.SaveChanges();
+            }
         }
 
         public void DeactivateSensor(string id)

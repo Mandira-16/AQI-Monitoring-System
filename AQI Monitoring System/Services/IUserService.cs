@@ -11,9 +11,8 @@ namespace AQI_Monitoring_System.Services
         void AddUser(User user);
 
         List<User> GetAllUsers();
-        User GetUserById(int id);
+        User? GetUserById(int id);
         void UpdateUser(User user);
         void DeleteUser(int id);
     }
-    //CHANGED A FEW TO FIX THE ERRORS - TEMPORARY 
 }
