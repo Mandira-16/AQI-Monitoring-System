@@ -4,6 +4,7 @@ using AQI_Monitoring_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AQI_Monitoring_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250330201051_AddSimulationConfig")]
+    partial class AddSimulationConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -63,9 +66,8 @@ namespace AQI_Monitoring_System.Migrations
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("SensorId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                    b.Property<int>("SensorId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -76,8 +78,11 @@ namespace AQI_Monitoring_System.Migrations
 
             modelBuilder.Entity("AQI_Monitoring_System.Models.Sensor", b =>
                 {
-                    b.Property<string>("SensorId")
-                        .HasColumnType("varchar(255)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
@@ -92,7 +97,11 @@ namespace AQI_Monitoring_System.Migrations
                     b.Property<double>("Longitude")
                         .HasColumnType("double");
 
-                    b.HasKey("SensorId");
+                    b.Property<string>("SensorId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
 
                     b.ToTable("Sensors", (string)null);
                 });
