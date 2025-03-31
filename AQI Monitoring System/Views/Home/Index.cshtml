@@ -1,7 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Home";
 }
-
 <!--Map Leaflet CSS file-->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
@@ -12,9 +11,97 @@
 </div>
 
 <div class="content mt-4">
-    <h2>More Information</h2>
-    <p>This section appears when you scroll down.</p>
-    <p>You can add air quality insights, statistics, or any other content here.</p>
+    <h2>Air Quality Index (AQI) Information</h2>
+    <p>The Air Quality Index (AQI) is an index for reporting daily air quality. It tells you how clean or polluted your air is, and what associated health effects might be a concern for you.</p>
+
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <table class="aqi-table">
+                <thead>
+                    <tr>
+                        <th>AQI Range</th>
+                        <th>Level of Health Concern</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background-color: rgba(0, 153, 102, 0.1)">
+                        <td>0-50</td>
+                        <td>Good</td>
+                        <td>Air quality is considered satisfactory, and air pollution poses little or no risk.</td>
+                    </tr>
+                    <tr style="background-color: rgba(255, 222, 51, 0.1)">
+                        <td>51-100</td>
+                        <td>Moderate</td>
+                        <td>Air quality is acceptable; however, for some pollutants there may be a moderate health concern for a very small number of people who are unusually sensitive to air pollution.</td>
+                    </tr>
+                    <tr style="background-color: rgba(255, 153, 51, 0.1)">
+                        <td>101-150</td>
+                        <td>Unhealthy for Sensitive Groups</td>
+                        <td>Members of sensitive groups may experience health effects. The general public is not likely to be affected.</td>
+                    </tr>
+                    <tr style="background-color: rgba(204, 0, 51, 0.1)">
+                        <td>151-200</td>
+                        <td>Unhealthy</td>
+                        <td>Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.</td>
+                    </tr>
+                    <tr style="background-color: rgba(102, 0, 153, 0.1)">
+                        <td>201-300</td>
+                        <td>Very Unhealthy</td>
+                        <td>Health warnings of emergency conditions. The entire population is more likely to be affected.</td>
+                    </tr>
+                    <tr style="background-color: rgba(126, 0, 35, 0.1)">
+                        <td>301+</td>
+                        <td>Hazardous</td>
+                        <td>Health alert: everyone may experience more serious health effects.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="pollutant-info">
+        <h3>Major Pollutants Measured</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <h4>PM2.5</h4>
+                <p>Fine particulate matter (diameter less than 2.5 micrometers) that can penetrate deep into the lungs and even enter the bloodstream. Sources include combustion from vehicle engines, industry, wood burning, and other sources.</p>
+
+                <h4>PM10</h4>
+                <p>Particulate matter with a diameter between 2.5 and 10 micrometers. These particles can enter the lungs and cause respiratory problems. Sources include road dust, construction, and some industrial processes.</p>
+
+                <h4>O3 (Ozone)</h4>
+                <p>A gas that forms when pollutants emitted by cars, power plants, industrial boilers, and other sources react chemically in the presence of sunlight. Can cause airway inflammation and reduced lung function.</p>
+            </div>
+            <div class="col-md-6">
+                <h4>NO2 (Nitrogen Dioxide)</h4>
+                <p>A reddish-brown gas with a pungent odor, primarily from vehicle exhaust and power plants. Can cause increased respiratory symptoms and susceptibility to respiratory infections.</p>
+
+                <h4>SO2 (Sulfur Dioxide)</h4>
+                <p>A colorless gas with a sharp odor, primarily from fossil fuel combustion at power plants and industrial facilities. Can harm the respiratory system and cause breathing difficulties.</p>
+
+                <h4>CO (Carbon Monoxide)</h4>
+                <p>A colorless, odorless gas formed when carbon in fuel is not burned completely. Vehicle exhaust is a major source. Reduces oxygen delivery throughout the body.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h3>Protect Your Health</h3>
+        <p>When AQI levels are high:</p>
+        <ul>
+            <li>Reduce outdoor activities, especially if you have respiratory or heart conditions</li>
+            <li>Keep windows and doors closed</li>
+            <li>Use air purifiers with HEPA filters</li>
+            <li>Wear appropriate masks when outdoors (N95 or better for particulate matter)</li>
+            <li>Stay hydrated</li>
+            <li>Follow local health authority recommendations</li>
+        </ul>
+    </div>
+
+    <div class="mt-4">
+        <p>Data source: <a href="https://waqi.info/" target="_blank">World Air Quality Index Project</a></p>
+    </div>
 </div>
 
 @section Scripts {
@@ -22,19 +109,63 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
-
     <script>
         // Initialize the map
         var map = L.map('map').setView([20, 0], 3);
 
         // Add the OpenStreetMap tile layer
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | Air Quality data: <a href="https://waqi.info/">WAQI.info</a>'
         }).addTo(map);
 
-        // Fetch and display AQI data
-        fetch('https://api.waqi.info/feed/here/?token=YOUR_API_KEY')
-            .then(response => response.json())
-            .then(data => console.log(data));
+        // Create legend for AQI colors
+        var legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<h4>Air Quality Index</h4>';
+            div.innerHTML += '<i style="background: #009966"></i> Good (0-50)<br>';
+            div.innerHTML += '<i style="background: #FFDE33"></i> Moderate (51-100)<br>';
+            div.innerHTML += '<i style="background: #FF9933"></i> Unhealthy for Sensitive Groups (101-150)<br>';
+            div.innerHTML += '<i style="background: #CC0033"></i> Unhealthy (151-200)<br>';
+            div.innerHTML += '<i style="background: #660099"></i> Very Unhealthy (201-300)<br>';
+            div.innerHTML += '<i style="background: #7E0023"></i> Hazardous (301+)<br>';
+            return div;
+        };
+        legend.addTo(map);
+
+        // Placeholder data points as example (not real-time data)
+        // You can add some example points for demonstration
+        var examplePoints = [
+            { lat: 40.7128, lon: -74.0060, aqi: 35, name: "New York" }, // Good
+            { lat: 51.5074, lon: -0.1278, aqi: 75, name: "London" },    // Moderate
+            { lat: 48.8566, lon: 2.3522, aqi: 120, name: "Paris" },     // Unhealthy for Sensitive Groups
+            { lat: 39.9042, lon: 116.4074, aqi: 165, name: "Beijing" }, // Unhealthy
+            { lat: 28.6139, lon: 77.2090, aqi: 230, name: "Delhi" },    // Very Unhealthy
+            { lat: 37.7749, lon: -122.4194, aqi: 45, name: "San Francisco" } // Good
+        ];
+
+        // Function to determine marker color based on AQI
+        function getColor(aqi) {
+            return aqi <= 50 ? '#009966' :
+                aqi <= 100 ? '#FFDE33' :
+                    aqi <= 150 ? '#FF9933' :
+                        aqi <= 200 ? '#CC0033' :
+                            aqi <= 300 ? '#660099' :
+                                '#7E0023';
+        }
+
+        // Add example markers
+        examplePoints.forEach(point => {
+            var marker = L.circleMarker([point.lat, point.lon], {
+                radius: 8,
+                fillColor: getColor(point.aqi),
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+
+            marker.bindPopup(`<b>${point.name}</b><br>AQI: ${point.aqi}`);
+        });
     </script>
 }
