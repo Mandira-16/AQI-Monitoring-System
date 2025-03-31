@@ -9,10 +9,146 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container">
+	<div class="marker-popup" id="markerPopup" style="display: none; position: absolute; z-index: 1000; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 12px; width: 240px;">
+		<div class="popup-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+			<h5 id="popupLocation" style="margin: 0; font-weight: 600;">Sensor Location</h5>
+			<span id="popupAqi" style="font-size: 24px; font-weight: bold; padding: 2px 8px; border-radius: 4px;">0</span>
+		</div>
+		<div class="popup-body">
+			<p><strong>Last updated:</strong> <span id="popupTime">-</span></p>
+			<div id="popupPollutants" style="margin: 8px 0;">
+				<!-- Pollutant details will be inserted here -->
+			</div>
+			<a id="popupHistoryLink" class="btn btn-sm btn-primary" style="width: 100%;">View History</a>
+		</div>
+	</div>
 	<!-- Map -->
 	<div id="map-container">
 		<div id="map" style="height: 400px;"></div>
 	</div>
+	<script>
+		// Global variables for popup management
+		let popup = document.getElementById('markerPopup');
+		let activeMarker = null;
+		let markerElements = [];  // This will be populated after markers are created
+
+		// Function to show popup when hovering over a marker
+		function showPopup(event, marker) {
+			activeMarker = marker;
+
+			// Get marker data
+			const sensorId = marker.getAttribute('data-sensor-id');
+			const location = marker.getAttribute('data-location');
+			const aqi = marker.getAttribute('data-aqi');
+			const updated = marker.getAttribute('data-updated');
+
+			// Set popup content
+			document.getElementById('popupLocation').textContent = location;
+			document.getElementById('popupAqi').textContent = aqi;
+			document.getElementById('popupTime').textContent = updated;
+
+			// Set background color based on AQI value
+			const aqiValue = parseInt(aqi);
+			let bgColor = getAqiColor(aqiValue);
+			document.getElementById('popupAqi').style.backgroundColor = bgColor;
+
+			// Set text color (white for dark backgrounds, black for light backgrounds)
+			document.getElementById('popupAqi').style.color =
+				(aqiValue > 100) ? 'white' : 'black';
+
+			// Populate pollutants
+			let pollutantsHtml = '';
+			if (marker.getAttribute('data-pm25'))
+				pollutantsHtml += `<div>PM2.5: ${marker.getAttribute('data-pm25')} μg/m³</div>`;
+			if (marker.getAttribute('data-pm10'))
+				pollutantsHtml += `<div>PM10: ${marker.getAttribute('data-pm10')} μg/m³</div>`;
+			if (marker.getAttribute('data-o3'))
+				pollutantsHtml += `<div>O₃: ${marker.getAttribute('data-o3')} ppb</div>`;
+			if (marker.getAttribute('data-no2'))
+				pollutantsHtml += `<div>NO₂: ${marker.getAttribute('data-no2')} ppb</div>`;
+
+			document.getElementById('popupPollutants').innerHTML = pollutantsHtml;
+
+			// Set history link
+			document.getElementById('popupHistoryLink').href = `/Home/SensorHistory?sensorId=${sensorId}`;
+
+			// Position popup near marker
+			const rect = marker.getBoundingClientRect();
+			popup.style.left = (rect.left + window.scrollX) + 'px';
+			popup.style.top = (rect.bottom + window.scrollY + 10) + 'px'; // 10px below marker
+
+			// Show popup
+			popup.style.display = 'block';
+
+			// Add hover capability to the popup itself
+			popup.addEventListener('mouseenter', () => {
+				popup.style.display = 'block';
+			});
+
+			popup.addEventListener('mouseleave', hidePopupIfNotHovered);
+		}
+
+		// Function to hide popup when mouse leaves marker and popup
+		function hidePopupIfNotHovered() {
+			// Use a short timeout to check if we're now hovering over the popup
+			setTimeout(() => {
+				const isHoveringPopup = popup.matches(':hover');
+				const isHoveringMarker = activeMarker && activeMarker.matches(':hover');
+
+				if (!isHoveringPopup && !isHoveringMarker) {
+					popup.style.display = 'none';
+				}
+			}, 100);
+		}
+
+		// Helper function to get color based on AQI
+		function getAqiColor(aqi) {
+			if (aqi <= 50) return '#009966'; // Good
+			if (aqi <= 100) return '#FFDE33'; // Moderate
+			if (aqi <= 150) return '#FF9933'; // Unhealthy for Sensitive Groups
+			if (aqi <= 200) return '#CC0033'; // Unhealthy
+			if (aqi <= 300) return '#660099'; // Very Unhealthy
+			return '#7E0023'; // Hazardous
+		}
+
+		// Example for Leaflet.js implementation
+		function createMarkers(map, sensorData) {
+			sensorData.forEach(sensor => {
+				// Create a marker with appropriate icon
+				const markerIcon = L.divIcon({
+					className: 'sensor-marker',
+					html: `<div class="marker-circle" style="background-color: ${getAqiColor(sensor.aqi)};">${sensor.aqi}</div>`,
+					iconSize: [40, 40]
+				});
+
+				const marker = L.marker([sensor.latitude, sensor.longitude], { icon: markerIcon });
+
+				// Set data attributes
+				const markerElement = marker.getElement();
+				markerElement.setAttribute('data-sensor-id', sensor.sensorId);
+				markerElement.setAttribute('data-location', sensor.location);
+				markerElement.setAttribute('data-aqi', sensor.aqi);
+				markerElement.setAttribute('data-updated', new Date(sensor.recordedAt).toLocaleString());
+
+				// Add pollutant data if available
+				if (sensor.pm25) markerElement.setAttribute('data-pm25', sensor.pm25);
+				if (sensor.pm10) markerElement.setAttribute('data-pm10', sensor.pm10);
+				if (sensor.o3) markerElement.setAttribute('data-o3', sensor.o3);
+				if (sensor.no2) markerElement.setAttribute('data-no2', sensor.no2);
+
+				marker.addTo(map);
+
+				// Store marker element for later use
+				markerElements.push(markerElement);
+			});
+
+			// Set up event listeners for markers after they're created
+			markerElements.forEach(marker => {
+				marker.addEventListener('mouseenter', (e) => showPopup(e, marker));
+				marker.addEventListener('mouseleave', hidePopupIfNotHovered);
+			});
+		}
+	</script>
 
 	<div class="content mt-4">
 		<h2>Real-Time Air Quality in Colombo</h2>
@@ -186,10 +322,10 @@
 			}).addTo(map);
 
 			var popupContent = `
-						<b>${sensor.location} (Sensor ${sensor.sensorId})</b><br>
-						Current AQI: ${sensor.aqi}<br>
-						<a href="/Home/SensorHistory?sensorId=${sensor.sensorId}&period=day">View History</a>
-					`;
+								<b>${sensor.location} (Sensor ${sensor.sensorId})</b><br>
+								Current AQI: ${sensor.aqi}<br>
+								<a href="/Home/SensorHistory?sensorId=${sensor.sensorId}&period=day">View History</a>
+							`;
 			marker.bindPopup(popupContent);
 		});
 
