@@ -18,15 +18,17 @@ namespace AQI_Monitoring_System.Controllers
         private readonly ISensorService _sensorService; 
         private readonly AqiSimulationService _simulationService;
         private readonly ApplicationDbContext _dbContext;
+        private readonly ISimulationConfigService _simulationConfigService;
 
         public HomeController(ILogger<HomeController> logger, IUserService userService,
-            ISensorService sensorService, AqiSimulationService simulationService, ApplicationDbContext dbContext)
+            ISensorService sensorService, AqiSimulationService simulationService, ApplicationDbContext dbContext, ISimulationConfigService simulationConfigService)
         {
             _logger = logger;
             _userService = userService;
             _sensorService = sensorService;
             _simulationService = simulationService;
             _dbContext = dbContext;
+            _simulationConfigService = simulationConfigService;
         }
 
         public IActionResult Index()
@@ -93,9 +95,9 @@ namespace AQI_Monitoring_System.Controllers
             // Add role to claims
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.Username?? string.Empty),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, user.Role?? "User")
             };
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
@@ -175,6 +177,7 @@ namespace AQI_Monitoring_System.Controllers
             var sensors = _sensorService.GetAllSensors();
             ViewBag.ActiveSensorsCount = sensors?.Count(s => s.IsActive) ?? 0;
             ViewBag.SimulationStatus = _simulationService.IsRunning ? "Running" : "Stopped";
+            ViewBag.SimulationConfig = _simulationConfigService.GetConfig();
 
             // Fetch recent AQI readings
             var recentReadings = _dbContext.AqiReadings
@@ -194,7 +197,7 @@ namespace AQI_Monitoring_System.Controllers
                     Threshold = thresholds.FirstOrDefault(t => r.Aqi >= t.MinAqi && r.Aqi <= t.MaxAqi)
                 })
                 .Where(a => a.Threshold != null && a.Aqi > 100)
-                .Select(a => $"Sensor {a.SensorId} has {a.Threshold.Category} air quality (AQI: {a.Aqi})")
+                .Select(a => $"Sensor {a.SensorId} has {(a.Threshold != null ? a.Threshold.Category : "Unknown")} air quality (AQI: {a.Aqi})")
                 .ToList();
 
             ViewBag.RecentReadings = recentReadings;
@@ -234,6 +237,47 @@ namespace AQI_Monitoring_System.Controllers
         public IActionResult StopSimulation()
         {
             _simulationService.StopSimulation();
+            return RedirectToAction("MonitorAdminDashboard");
+        }
+
+        // GET: /Home/ConfigureSimulation
+        [Authorize(Roles = "Admin")]
+        public IActionResult ConfigureSimulation()
+        {
+            var config = _simulationConfigService.GetConfig();
+            return View(config);
+        }
+
+        // POST: /Home/ConfigureSimulation
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public IActionResult ConfigureSimulation(SimulationConfig model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Validation
+            if (model.FrequencyMinutes < 1 || model.FrequencyMinutes > 60)
+            {
+                ModelState.AddModelError("FrequencyMinutes", "Frequency must be between 1 and 60 minutes.");
+                return View(model);
+            }
+            if (model.BaselineAqi < 0 || model.BaselineAqi > 500)
+            {
+                ModelState.AddModelError("BaselineAqi", "Baseline AQI must be between 0 and 500.");
+                return View(model);
+            }
+            if (model.VariationRange < 0 || model.VariationRange > 500)
+            {
+                ModelState.AddModelError("VariationRange", "Variation range must be between 0 and 500.");
+                return View(model);
+            }
+
+            _simulationConfigService.UpdateConfig(model);
+            TempData["SuccessMessage"] = "Simulation configuration updated successfully!";
             return RedirectToAction("MonitorAdminDashboard");
         }
 
@@ -313,7 +357,7 @@ namespace AQI_Monitoring_System.Controllers
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeactivateSensor(string id)
+        public IActionResult ToggleSensorStatus(string id)
         {
             var sensor = _sensorService.GetSensorById(id);
             if (sensor == null)
@@ -322,8 +366,10 @@ namespace AQI_Monitoring_System.Controllers
                 return RedirectToAction("MonitorAdminDashboard");
             }
 
-            _sensorService.DeactivateSensor(id);
-            TempData["SuccessMessage"] = $"Sensor {id} deactivated successfully!";
+            // Toggle the IsActive status
+            sensor.IsActive = !sensor.IsActive;
+            _sensorService.UpdateSensor(sensor); // Assuming UpdateSensor exists in ISensorService
+            TempData["SuccessMessage"] = $"Sensor {id} {(sensor.IsActive ? "activated" : "deactivated")} successfully!";
             return RedirectToAction("MonitorAdminDashboard");
         }
 
