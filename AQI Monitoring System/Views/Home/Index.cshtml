@@ -1,6 +1,6 @@
 ﻿@model List<AQI_Monitoring_System.Models.AqiReading>
 @{
-    ViewData["Title"] = "Colombo Air Quality Dashboard";
+	ViewData["Title"] = "Colombo Air Quality Dashboard";
 }
 
 <!-- Leaflet CSS -->
@@ -9,274 +9,235 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container">
-    <!-- Map -->
-    <div id="map-container">
-        <div id="map" style="height: 400px;"></div>
-    </div>
+	<!-- Map -->
+	<div id="map-container">
+		<div id="map" style="height: 400px;"></div>
+	</div>
 
-    <div class="content mt-4">
-        <h2>Real-Time Air Quality in Colombo</h2>
-        <p>View the latest Air Quality Index (AQI) readings from sensors across Colombo.</p>
+	<div class="content mt-4">
+		<h2>Real-Time Air Quality in Colombo</h2>
+		<p>View the latest Air Quality Index (AQI) readings from sensors across Colombo.</p>
 
-        <!-- Latest Readings Table -->
-        <div class="row mt-3">
-            <div class="col-md-12">
-                <h3>Current Readings</h3>
-                @if (Model.Any())
-                {
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Sensor ID</th>
-                                <th>Location</th>
-                                <th>AQI</th>
-                                <th>Recorded At</th>
-                                <th>History</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var reading in Model)
-                            {
-                                <tr>
-                                    <td>@reading.SensorId</td>
-                                    <td>@(reading.Sensor?.Location ?? "Unknown")</td>
-                                    <td style="background-color: @(GetAqiColor(reading.Aqi))">@reading.Aqi</td>
-                                    <td>@reading.RecordedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                                    <td><a href="@Url.Action("SensorHistory", new { sensorId = reading.SensorId })" class="btn btn-sm btn-info">View History</a></td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <p>No current readings available.</p>
-                }
-            </div>
-        </div>
+		<!-- Latest Readings Table -->
+		<div class="row mt-3">
+			<div class="col-md-12">
+				<h3>Current Readings</h3>
+				@if (Model.Any())
+				{
+					<table class="table table-striped">
+						<thead>
+							<tr>
+								<th>Sensor ID</th>
+								<th>Location</th>
+								<th>AQI</th>
+								<th>Recorded At</th>
+								<th>History</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach (var reading in Model)
+							{
+								<tr>
+									<td>@reading.SensorId</td>
+									<td>@(reading.Sensor?.Location ?? "Unknown")</td>
+									<td style="background-color: @(GetAqiColor(reading.Aqi))">@reading.Aqi</td>
+									<td>@reading.RecordedAt.ToString("yyyy-MM-dd HH:mm")</td>
+									<td><a href="@Url.Action("SensorHistory", new { sensorId = reading.SensorId })" class="btn btn-sm btn-info">View History</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+				else
+				{
+					<p>No current readings available.</p>
+				}
+			</div>
+		</div>
 
-        <!-- Dynamic AQI Legend -->
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <h3>AQI Legend</h3>
-                <table class="aqi-table">
-                    <thead>
-                        <tr>
-                            <th>AQI Range</th>
-                            <th>Level of Health Concern</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var threshold in (List<AQI_Monitoring_System.Models.AlertThreshold>)ViewBag.Thresholds)
-                        {
-                            <tr style="background-color: rgba(@(HexToRgb(threshold.Color)), 0.1)">
-                                <td>@threshold.MinAqi-@threshold.MaxAqi</td>
-                                <td>@threshold.Category</td>
-                                <td>@GetDescription(threshold.Category)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+		<!-- Dynamic AQI Legend -->
+		<div class="row mt-4">
+			<div class="col-md-12">
+				<h3>AQI Legend</h3>
+				<table class="aqi-table">
+					<thead>
+						<tr>
+							<th>AQI Range</th>
+							<th>Level of Health Concern</th>
+							<th>Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var threshold in (List<AQI_Monitoring_System.Models.AlertThreshold>)ViewBag.Thresholds)
+						{
+							<tr style="background-color: rgba(@(HexToRgb(threshold.Color)), 0.1)">
+								<td>@threshold.MinAqi-@threshold.MaxAqi</td>
+								<td>@threshold.Category</td>
+								<td>@GetDescription(threshold.Category)</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
 
-        <!-- Static Info -->
-        <div class="pollutant-info mt-4">
-            <h3>Major Pollutants Measured</h3>
-            <div class="row">
-                <div class="col-md-6">
-                    <h4>PM2.5</h4>
-                    <p>Fine particulate matter (diameter less than 2.5 micrometers) that can penetrate deep into the lungs and even enter the bloodstream.</p>
-                    <h4>PM10</h4>
-                    <p>Particulate matter with a diameter between 2.5 and 10 micrometers.</p>
-                    <h4>O3 (Ozone)</h4>
-                    <p>A gas that forms when pollutants react in sunlight.</p>
-                </div>
-                <div class="col-md-6">
-                    <h4>NO2 (Nitrogen Dioxide)</h4>
-                    <p>A gas from vehicle exhaust and power plants.</p>
-                    <h4>SO2 (Sulfur Dioxide)</h4>
-                    <p>A gas from fossil fuel combustion.</p>
-                    <h4>CO (Carbon Monoxide)</h4>
-                    <p>A gas from incomplete fuel combustion.</p>
-                </div>
-            </div>
-        </div>
+		<!-- Static Info -->
+		<div class="pollutant-info mt-4">
+			<h3>Major Pollutants Measured</h3>
+			<div class="row">
+				<div class="col-md-6">
+					<h4>PM2.5</h4>
+					<p>Fine particulate matter (diameter less than 2.5 micrometers) that can penetrate deep into the lungs and even enter the bloodstream.</p>
+					<h4>PM10</h4>
+					<p>Particulate matter with a diameter between 2.5 and 10 micrometers.</p>
+					<h4>O3 (Ozone)</h4>
+					<p>A gas that forms when pollutants react in sunlight.</p>
+				</div>
+				<div class="col-md-6">
+					<h4>NO2 (Nitrogen Dioxide)</h4>
+					<p>A gas from vehicle exhaust and power plants.</p>
+					<h4>SO2 (Sulfur Dioxide)</h4>
+					<p>A gas from fossil fuel combustion.</p>
+					<h4>CO (Carbon Monoxide)</h4>
+					<p>A gas from incomplete fuel combustion.</p>
+				</div>
+			</div>
+		</div>
 
-        <div class="mt-4">
-            <h3>Protect Your Health</h3>
-            <p>When AQI levels are high:</p>
-            <ul>
-                <li>Reduce outdoor activities</li>
-                <li>Keep windows closed</li>
-                <li>Use air purifiers</li>
-                <li>Wear masks (N95 or better)</li>
-                <li>Stay hydrated</li>
-                <li>Follow health authority advice</li>
-            </ul>
-        </div>
+		<div class="mt-4">
+			<h3>Protect Your Health</h3>
+			<p>When AQI levels are high:</p>
+			<ul>
+				<li>Reduce outdoor activities</li>
+				<li>Keep windows closed</li>
+				<li>Use air purifiers</li>
+				<li>Wear masks (N95 or better)</li>
+				<li>Stay hydrated</li>
+				<li>Follow health authority advice</li>
+			</ul>
+		</div>
 
-        <div class="mt-4">
-            <p>Data simulated by Colombo Air Quality Monitoring System</p>
-        </div>
-    </div>
+		<div class="mt-4">
+			<p>Data simulated by Colombo Air Quality Monitoring System</p>
+		</div>
+	</div>
 </div>
 
 <style>
-    .aqi-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
+	.aqi-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
 
-        .aqi-table th, .aqi-table td {
-            padding: 8px;
-            border: 1px solid #ddd;
-        }
+		.aqi-table th, .aqi-table td {
+			padding: 8px;
+			border: 1px solid #ddd;
+		}
 
-        .aqi-table th {
-            background-color: #f2f2f2;
-        }
+		.aqi-table th {
+			background-color: #f2f2f2;
+		}
 
-    .legend {
-        background: white;
-        padding: 10px;
-        border: 1px solid #ccc;
-    }
+	.legend {
+		background: white;
+		padding: 10px;
+		border: 1px solid #ccc;
+	}
 
-        .legend i {
-            width: 18px;
-            height: 18px;
-            float: left;
-            margin-right: 8px;
-        }
+		.legend i {
+			width: 18px;
+			height: 18px;
+			float: left;
+			margin-right: 8px;
+		}
 </style>
 
 @section Scripts {
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Initialize map centered on Colombo
-        var map = L.map('map').setView([6.9271, 79.8612], 12);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script>
+		var map = L.map('map').setView([6.9271, 79.8612], 12);
+		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		}).addTo(map);
 
-        // Dynamic sensor data
-        var sensors = @Html.Raw(Json.Serialize(Model.Select(r => new
-            {
-                sensorId = r.SensorId,
-                lat = r.Sensor.Latitude,
-                lon = r.Sensor.Longitude,
-                aqi = r.Aqi,
-                location = r.Sensor.Location
-            })));
+		var sensors = @Html.Raw(Json.Serialize(Model.Select(r => new { sensorId = r.SensorId, lat = r.Sensor.Latitude, lon = r.Sensor.Longitude, aqi = r.Aqi, location = r.Sensor.Location })));
+		var history = @Html.Raw(Json.Serialize(ViewBag.History));
+		var thresholds = @Html.Raw(Json.Serialize(ViewBag.Thresholds));
 
-        // History data
-        var history = @Html.Raw(Json.Serialize(ViewBag.History));
+		function getAqiColor(aqi) {
+			for (var i = 0; i < thresholds.length; i++) {
+				if (aqi >= thresholds[i].minAqi && aqi <= thresholds[i].maxAqi) {
+					return thresholds[i].color;
+				}
+			}
+			return '#000000';
+		}
 
-        // Thresholds for color mapping
-        var thresholds = @Html.Raw(Json.Serialize(ViewBag.Thresholds));
+		sensors.forEach(function (sensor) {
+			var color = getAqiColor(sensor.aqi);
+			var marker = L.circleMarker([sensor.lat, sensor.lon], {
+				radius: 8,
+				fillColor: color,
+				color: "#000",
+				weight: 1,
+				opacity: 1,
+				fillOpacity: 0.8
+			}).addTo(map);
 
-        // Client-side function to get AQI color
-        function getAqiColor(aqi) {
-            for (var i = 0; i < thresholds.length; i++) {
-                if (aqi >= thresholds[i].minAqi && aqi <= thresholds[i].maxAqi) {
-                    return thresholds[i].color;
-                }
-            }
-            return '#000000'; // Default to black
-        }
+			var popupContent = `
+						<b>${sensor.location} (Sensor ${sensor.sensorId})</b><br>
+						Current AQI: ${sensor.aqi}<br>
+						<a href="/Home/SensorHistory?sensorId=${sensor.sensorId}&period=day">View History</a>
+					`;
+			marker.bindPopup(popupContent);
+		});
 
-        // Add markers
-        sensors.forEach(function (sensor) {
-            var color = getAqiColor(sensor.aqi);
-            var marker = L.circleMarker([sensor.lat, sensor.lon], {
-                radius: 8,
-                fillColor: color,
-                color: "#000",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8
-            }).addTo(map);
-
-            // Popup with chart
-            var popupContent = `
-                        <b>${sensor.location} (Sensor ${sensor.sensorId})</b><br>
-                        Current AQI: ${sensor.aqi}<br>
-                        <canvas id="chart-${sensor.sensorId}" width="200" height="100"></canvas>
-                    `;
-            marker.bindPopup(popupContent);
-
-            marker.on('popupopen', function () {
-                var ctx = document.getElementById(`chart-${sensor.sensorId}`).getContext('2d');
-                var sensorHistory = history[sensor.sensorId] || [];
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: sensorHistory.map(h => new Date(h.recordedAt).toLocaleTimeString()),
-                        datasets: [{
-                            label: 'AQI',
-                            data: sensorHistory.map(h => h.aqi),
-                            borderColor: color,
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            x: { display: false },
-                            y: { beginAtZero: true, max: 500 }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            });
-        });
-
-        // Add legend
-        var legend = L.control({ position: 'bottomright' });
-        legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML = '<h4>AQI Legend</h4>';
-            thresholds.forEach(function (t) {
-                div.innerHTML += `<i style="background: ${t.color}"></i> ${t.category} (${t.minAqi}-${t.maxAqi})<br>`;
-            });
-            return div;
-        };
-        legend.addTo(map);
-    </script>
+		var legend = L.control({ position: 'bottomright' });
+		legend.onAdd = function (map) {
+			var div = L.DomUtil.create('div', 'legend');
+			div.innerHTML = '<h4>AQI Legend</h4>';
+			thresholds.forEach(function (t) {
+				div.innerHTML += `<i style="background: ${t.color}"></i> ${t.category} (${t.minAqi}-${t.maxAqi})<br>`;
+			});
+			return div;
+		};
+		legend.addTo(map);
+	</script>
 }
 
 @functions {
-    string GetAqiColor(int aqi)
-    {
-        var thresholds = (List<AQI_Monitoring_System.Models.AlertThreshold>)ViewBag.Thresholds;
-        var threshold = thresholds.FirstOrDefault(t => aqi >= t.MinAqi && aqi <= t.MaxAqi);
-        return threshold?.Color ?? "#000000";
-    }
+	string GetAqiColor(int aqi)
+	{
+		var thresholds = ViewBag.Thresholds as List<AQI_Monitoring_System.Models.AlertThreshold>;
+		if (thresholds == null || !thresholds.Any())
+		{
+			return "#000000"; // Default color if thresholds are not available
+		}
+		var threshold = thresholds.FirstOrDefault(t => aqi >= t.MinAqi && aqi <= t.MaxAqi);
+		return threshold?.Color ?? "#000000";
+	}
 
-    string HexToRgb(string hex)
-    {
-        hex = hex.TrimStart('#');
-        var r = Convert.ToInt32(hex.Substring(0, 2), 16);
-        var g = Convert.ToInt32(hex.Substring(2, 2), 16);
-        var b = Convert.ToInt32(hex.Substring(4, 2), 16);
-        return $"{r}, {g}, {b}";
-    }
+	string HexToRgb(string hex)
+	{
+		hex = hex.TrimStart('#');
+		var r = Convert.ToInt32(hex.Substring(0, 2), 16);
+		var g = Convert.ToInt32(hex.Substring(2, 2), 16);
+		var b = Convert.ToInt32(hex.Substring(4, 2), 16);
+		return $"{r}, {g}, {b}";
+	}
 
-    string GetDescription(string category)
-    {
-        return category switch
-        {
-            "Good" => "Air quality is satisfactory, posing little or no risk.",
-            "Moderate" => "Air quality is acceptable; moderate concern for sensitive individuals.",
-            "Unhealthy for Sensitive Groups" => "Sensitive groups may experience health effects.",
-            "Unhealthy" => "Everyone may experience health effects; sensitive groups worse.",
-            "Very Unhealthy" => "Health warnings; entire population affected.",
-            "Hazardous" => "Health alert; serious effects for everyone.",
-            _ => "No description available."
-        };
-    }
+	string GetDescription(string category)
+	{
+		return category switch
+		{
+			"Good" => "Air quality is satisfactory, posing little or no risk.",
+			"Moderate" => "Air quality is acceptable; moderate concern for sensitive individuals.",
+			"Unhealthy for Sensitive Groups" => "Sensitive groups may experience health effects.",
+			"Unhealthy" => "Everyone may experience health effects; sensitive groups worse.",
+			"Very Unhealthy" => "Health warnings; entire population affected.",
+			"Hazardous" => "Health alert; serious effects for everyone.",
+			_ => "No description available."
+		};
+	}
 }
