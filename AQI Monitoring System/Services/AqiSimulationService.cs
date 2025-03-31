@@ -1,8 +1,9 @@
-﻿// Services/AqiSimulationService.cs
+﻿// Services/AqiSimulationService.cs (Updated)
 using AQI_Monitoring_System.Data;
 using AQI_Monitoring_System.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading;
@@ -13,67 +14,82 @@ namespace AQI_Monitoring_System.Services
     public class AqiSimulationService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<AqiSimulationService> _logger;
         private bool _isRunning = false;
-        private int _generationIntervalMinutes = 5;
-        private int _baselineAqi = 50;
-        private int _maxVariation = 100;
 
-        private volatile int _currentIntervalMinutes;
-        private volatile int _currentBaselineAqi;
-        private volatile int _currentMaxVariation;
-
-        public AqiSimulationService(IServiceProvider serviceProvider)
+        public AqiSimulationService(IServiceProvider serviceProvider, ILogger<AqiSimulationService> logger)
         {
             _serviceProvider = serviceProvider;
-            _currentIntervalMinutes = _generationIntervalMinutes;
-            _currentBaselineAqi = _baselineAqi;
-            _currentMaxVariation = _maxVariation;
+            _logger = logger;
         }
 
         public bool IsRunning => _isRunning;
-        public int GenerationIntervalMinutes => _currentIntervalMinutes;
-        public int BaselineAqi => _currentBaselineAqi;
-        public int MaxVariation => _currentMaxVariation;
+
+        public int GenerationIntervalMinutes
+        {
+            get
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var configService = scope.ServiceProvider.GetRequiredService<ISimulationConfigService>();
+                return configService.GetConfig().FrequencyMinutes;
+            }
+        }
+
+        public int BaselineAqi
+        {
+            get
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var configService = scope.ServiceProvider.GetRequiredService<ISimulationConfigService>();
+                return configService.GetConfig().BaselineAqi;
+            }
+        }
+
+        public int MaxVariation
+        {
+            get
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var configService = scope.ServiceProvider.GetRequiredService<ISimulationConfigService>();
+                return configService.GetConfig().VariationRange;
+            }
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using (var scope = _serviceProvider.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var config = dbContext.SimulationConfigs.FirstOrDefault();
-                if (config != null)
-                {
-                    _currentIntervalMinutes = config.FrequencyMinutes;
-                    _currentBaselineAqi = config.BaselineAqi;
-                    _currentMaxVariation = config.VariationRange;
-                }
-            }
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 if (_isRunning)
                 {
-                    using (var scope = _serviceProvider.CreateScope())
-                    {
-                        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                        var sensors = dbContext.Sensors.Where(s => s.IsActive).ToList();
-                        var random = new Random();
+                    using var scope = _serviceProvider.CreateScope();
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    var configService = scope.ServiceProvider.GetRequiredService<ISimulationConfigService>();
+                    var config = configService.GetConfig();
+                    var sensors = dbContext.Sensors.Where(s => s.IsActive).ToList();
+                    var random = new Random();
 
-                        foreach (var sensor in sensors)
+                    foreach (var sensor in sensors)
+                    {
+                        int variation = random.Next(-config.VariationRange / 2, config.VariationRange / 2);
+                        int rawAqi = config.BaselineAqi + variation;
+                        int aqi = Math.Max(0, Math.Min(500, rawAqi));
+                        if (rawAqi != aqi)
                         {
-                            int variation = random.Next(-_currentMaxVariation / 2, _currentMaxVariation / 2);
-                            int aqi = Math.Max(0, Math.Min(500, _currentBaselineAqi + variation));
-                            dbContext.AqiReadings.Add(new AqiReading
-                            {
-                                SensorId = sensor.SensorId, // Corrected to string
-                                Aqi = aqi,
-                                RecordedAt = DateTime.UtcNow
-                            });
+                            _logger.LogWarning($"AQI adjusted from {rawAqi} to {aqi} for sensor {sensor.SensorId}");
                         }
-                        await dbContext.SaveChangesAsync(stoppingToken);
+
+                        dbContext.AqiReadings.Add(new AqiReading
+                        {
+                            SensorId = sensor.SensorId,
+                            Aqi = aqi,
+                            RecordedAt = DateTime.UtcNow
+                        });
                     }
+                    await dbContext.SaveChangesAsync(stoppingToken);
                 }
-                await Task.Delay(TimeSpan.FromMinutes(_currentIntervalMinutes), stoppingToken);
+                using var delayScope = _serviceProvider.CreateScope();
+                var delayConfigService = delayScope.ServiceProvider.GetRequiredService<ISimulationConfigService>();
+                await Task.Delay(TimeSpan.FromMinutes(delayConfigService.GetConfig().FrequencyMinutes), stoppingToken);
             }
         }
 
@@ -85,13 +101,6 @@ namespace AQI_Monitoring_System.Services
         public void StopSimulation()
         {
             _isRunning = false;
-        }
-
-        public void ConfigureSimulation(int intervalMinutes, int baselineAqi, int maxVariation)
-        {
-            _currentIntervalMinutes = Math.Max(1, Math.Min(15, intervalMinutes));
-            _currentBaselineAqi = Math.Max(0, Math.Min(500, baselineAqi));
-            _currentMaxVariation = Math.Max(0, Math.Min(500, maxVariation));
         }
     }
 }
