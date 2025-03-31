@@ -1,0 +1,49 @@
+﻿@model List<AQI_Monitoring_System.Models.AqiReading>
+@{
+    ViewData["Title"] = $"History for Sensor {ViewBag.SensorId}";
+}
+
+<div class="container">
+    <h2>History for Sensor @ViewBag.SensorId</h2>
+    @if (Model.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>AQI</th>
+                    <th>Recorded At</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var reading in Model)
+                {
+                    <tr>
+                        <td style="background-color: @(GetAqiColor(reading.Aqi))">@reading.Aqi</td>
+                        <td>@reading.RecordedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No recent history available for this sensor.</p>
+    }
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+<style>
+    .table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+    }
+</style>
+
+@functions {
+    string GetAqiColor(int aqi)
+    {
+        var thresholds = (List<AQI_Monitoring_System.Models.AlertThreshold>)ViewBag.Thresholds ?? new List<AlertThreshold>();
+        var threshold = thresholds.FirstOrDefault(t => aqi >= t.MinAqi && aqi <= t.MaxAqi);
+        return threshold?.Color ?? "#000000";
+    }
+}
