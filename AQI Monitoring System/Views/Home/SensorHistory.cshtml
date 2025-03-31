@@ -1,49 +1,197 @@
 ﻿@model List<AQI_Monitoring_System.Models.AqiReading>
 @{
-    ViewData["Title"] = $"History for Sensor {ViewBag.SensorId}";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+	ViewData["Title"] = $"History for Sensor {ViewBag.SensorId}";
+	var sensor = ViewBag.Sensor as AQI_Monitoring_System.Models.Sensor;
 }
-
 <div class="container">
-    <h2>History for Sensor @ViewBag.SensorId</h2>
-    @if (Model.Any())
-    {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>AQI</th>
-                    <th>Recorded At</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var reading in Model)
-                {
-                    <tr>
-                        <td style="background-color: @(GetAqiColor(reading.Aqi))">@reading.Aqi</td>
-                        <td>@reading.RecordedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-    else
-    {
-        <p>No recent history available for this sensor.</p>
-    }
-    <a href="@Url.Action("Index")" class="btn btn-secondary">Back to Dashboard</a>
+	<h2>History for Sensor @ViewBag.SensorId (@sensor?.Location)</h2>
+
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<form id="filterForm" class="form-inline">
+				<div class="form-group mr-2">
+					<label for="startDate" class="mr-2">From:</label>
+					<input type="date" id="startDate" name="startDate" class="form-control" />
+				</div>
+				<div class="form-group mr-2">
+					<label for="endDate" class="mr-2">To:</label>
+					<input type="date" id="endDate" name="endDate" class="form-control" />
+				</div>
+				<button type="button" id="applyFilter" class="btn btn-primary">Apply Filter</button>
+				<button type="button" id="resetFilter" class="btn btn-secondary ml-2">Reset</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- ADD THIS SECTION FOR DEBUGGING: Data Verification -->
+	@if (Model != null)
+	{
+		<div id="debugInfo" class="alert alert-info">
+			<p><strong>Debug Info:</strong> Model count: @Model.Count</p>
+			@if (Model.Any())
+			{
+				<p><strong>First 3 records:</strong></p>
+				<ul>
+					@foreach (var item in Model.Take(3))
+					{
+						<li>AQI: @item.Aqi, Time: @item.RecordedAt</li>
+					}
+				</ul>
+			}
+		</div>
+	}
+	<!-- END OF ADDED SECTION -->
+	@if (Model.Any())
+	{
+		<canvas id="historyChart" width="800" height="400"></canvas>
+	}
+	else
+	{
+		<p>No history available for this sensor.</p>
+	}
+	<a href="@Url.Action("Index")" class="btn btn-secondary mt-3">Back to Dashboard</a>
 </div>
+@section Scripts {
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script>
+		// Store the full dataset
+		var fullHistory = @Html.Raw(Json.Serialize(Model));
+		var historyChart = null;
 
-<style>
-    .table td {
-        padding: 8px;
-        border: 1px solid #ddd;
-    }
-</style>
+		// Initialize the chart
+		function initializeChart(chartData) {
+			var ctx = document.getElementById('historyChart').getContext('2d');
 
-@functions {
-    string GetAqiColor(int aqi)
-    {
-        var thresholds = (List<AQI_Monitoring_System.Models.AlertThreshold>)ViewBag.Thresholds ?? new List<AlertThreshold>();
-        var threshold = thresholds.FirstOrDefault(t => aqi >= t.MinAqi && aqi <= t.MaxAqi);
-        return threshold?.Color ?? "#000000";
-    }
+			// Destroy existing chart if it exists
+			if (historyChart) {
+				historyChart.destroy();
+			}
+
+			// Prepare data
+			var labels = [];
+			var data = [];
+
+			for (var i = 0; i < chartData.length; i++) {
+				var date = new Date(chartData[i].recordedAt);
+				if (!isNaN(date.getTime())) {
+					labels.push(date.toLocaleString());
+					data.push(chartData[i].aqi);
+				}
+			}
+
+			// Create new chart
+			historyChart = new Chart(ctx, {
+				type: 'line',
+				data: {
+					labels: labels,
+					datasets: [{
+						label: 'AQI',
+						data: data,
+						borderColor: '#007bff',
+						backgroundColor: 'rgba(0, 123, 255, 0.1)',
+						fill: true,
+						tension: 0.1
+					}]
+				},
+				options: {
+					responsive: true,
+					scales: {
+						x: {
+							title: {
+								display: true,
+								text: 'Date and Time'
+							}
+						},
+						y: {
+							title: {
+								display: true,
+								text: 'AQI'
+							},
+							beginAtZero: true,
+							suggestedMin: 0,
+							suggestedMax: 500
+						}
+					}
+				}
+			});
+		}
+
+		// Filter function
+		function filterData() {
+			var startDate = document.getElementById('startDate').value;
+			var endDate = document.getElementById('endDate').value;
+
+			var filteredData = fullHistory;
+
+			if (startDate) {
+				startDate = new Date(startDate);
+				filteredData = filteredData.filter(item => {
+					var itemDate = new Date(item.recordedAt);
+					return itemDate >= startDate;
+				});
+			}
+
+			if (endDate) {
+				endDate = new Date(endDate);
+				endDate.setHours(23, 59, 59, 999); // End of day
+				filteredData = filteredData.filter(item => {
+					var itemDate = new Date(item.recordedAt);
+					return itemDate <= endDate;
+				});
+			}
+
+			// Update the chart with filtered data
+			initializeChart(filteredData);
+
+			// Update debug info
+			updateDebugInfo(filteredData);
+		}
+
+		// Initialize debug info update function
+		function updateDebugInfo(data) {
+			var debugInfo = document.getElementById('debugInfo');
+			if (debugInfo) {
+				var html = '<p><strong>Debug Info:</strong> Filtered count: ' + data.length + '</p>';
+				if (data.length > 0) {
+					html += '<p><strong>First 3 records:</strong></p><ul>';
+					for (var i = 0; i < Math.min(3, data.length); i++) {
+						var date = new Date(data[i].recordedAt);
+						html += '<li>AQI: ' + data[i].aqi + ', Time: ' + date.toLocaleString() + '</li>';
+					}
+					html += '</ul>';
+				}
+				debugInfo.innerHTML = html;
+			}
+		}
+
+		// Event listeners
+		document.addEventListener('DOMContentLoaded', function () {
+			// Initialize chart with full data
+			if (fullHistory && fullHistory.length > 0) {
+				initializeChart(fullHistory);
+			}
+
+			// Set up event handlers
+			document.getElementById('applyFilter').addEventListener('click', filterData);
+
+			document.getElementById('resetFilter').addEventListener('click', function () {
+				document.getElementById('startDate').value = '';
+				document.getElementById('endDate').value = '';
+				initializeChart(fullHistory);
+				updateDebugInfo(fullHistory);
+			});
+
+			// Initialize date fields with reasonable defaults
+			var today = new Date();
+			var lastMonth = new Date();
+			lastMonth.setDate(today.getDate() - 30);
+
+			document.getElementById('endDate').value = today.toISOString().split('T')[0];
+			document.getElementById('startDate').value = lastMonth.toISOString().split('T')[0];
+
+			// Apply initial filter
+			filterData();
+		});
+	</script>
 }
