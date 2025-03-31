@@ -33,8 +33,45 @@ namespace AQI_Monitoring_System.Controllers
 
         public IActionResult Index()
         {
-            ViewData["ActivePage"] = "Home";
-            return View();
+            // Fetch active sensors and their latest readings
+            var readings = _dbContext.AqiReadings
+                .Include(r => r.Sensor)
+                .Where(r => r.Sensor != null && r.Sensor.IsActive)
+                .GroupBy(r => r.SensorId)
+                .Select(g => g.OrderByDescending(r => r.RecordedAt).FirstOrDefault())
+                .ToList();
+
+            // Fetch alert thresholds for legend and colors
+            var thresholds = _dbContext.AlertThresholds.ToList();
+
+            // Fetch 24-hour history for each active sensor (for map pop-ups)
+            var activeSensorIds = readings.Select(r => r.SensorId).ToList();
+            var history = _dbContext.AqiReadings
+                .Where(r => activeSensorIds.Contains(r.SensorId))
+                .Where(r => r.RecordedAt >= DateTime.UtcNow.AddHours(-24))
+                .OrderBy(r => r.RecordedAt)
+                .ToList()
+                .GroupBy(r => r.SensorId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            ViewBag.Thresholds = thresholds;
+            ViewBag.History = history; // Pass history for JS chart rendering
+            return View(readings);
+        }
+
+        public IActionResult SensorHistory(string sensorId)
+        {
+            var history = _dbContext.AqiReadings
+                .Where(r => r.SensorId == sensorId)
+                .OrderByDescending(r => r.RecordedAt)
+                .Take(24) // Last 24 hours
+                .ToList();
+
+            // Fetch alert thresholds for color coding
+            var thresholds = _dbContext.AlertThresholds.ToList();
+            ViewBag.SensorId = sensorId;
+            ViewBag.Thresholds = thresholds; // Pass thresholds for color consistency
+            return View(history);
         }
 
         public IActionResult Privacy()
@@ -437,15 +474,15 @@ namespace AQI_Monitoring_System.Controllers
             var thresholds = _dbContext.AlertThresholds.ToList();
             if (!thresholds.Any())
             {
-                // Seed default thresholds if none exist
+                // Seed default thresholds with hex colors
                 thresholds = new List<AlertThreshold>
         {
-            new AlertThreshold { Category = "Good", MinAqi = 0, MaxAqi = 50, Color = "green" },
-            new AlertThreshold { Category = "Moderate", MinAqi = 51, MaxAqi = 100, Color = "yellow" },
-            new AlertThreshold { Category = "Unhealthy for Sensitive Groups", MinAqi = 101, MaxAqi = 150, Color = "orange" },
-            new AlertThreshold { Category = "Unhealthy", MinAqi = 151, MaxAqi = 200, Color = "red" },
-            new AlertThreshold { Category = "Very Unhealthy", MinAqi = 201, MaxAqi = 300, Color = "purple" },
-            new AlertThreshold { Category = "Hazardous", MinAqi = 301, MaxAqi = 500, Color = "maroon" }
+            new AlertThreshold { Category = "Good", MinAqi = 0, MaxAqi = 50, Color = "#009966" }, // Green
+            new AlertThreshold { Category = "Moderate", MinAqi = 51, MaxAqi = 100, Color = "#FFDE33" }, // Yellow
+            new AlertThreshold { Category = "Unhealthy for Sensitive Groups", MinAqi = 101, MaxAqi = 150, Color = "#FF9933" }, // Orange
+            new AlertThreshold { Category = "Unhealthy", MinAqi = 151, MaxAqi = 200, Color = "#CC0033" }, // Red
+            new AlertThreshold { Category = "Very Unhealthy", MinAqi = 201, MaxAqi = 300, Color = "#660099" }, // Purple
+            new AlertThreshold { Category = "Hazardous", MinAqi = 301, MaxAqi = 500, Color = "#7E0023" } // Maroon
         };
                 _dbContext.AlertThresholds.AddRange(thresholds);
                 _dbContext.SaveChanges();
