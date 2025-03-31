@@ -3,8 +3,6 @@ using AQI_Monitoring_System.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Win32;
-using System.Text;
 using AQI_Monitoring_System.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,12 +20,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register services for dependency injection
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ISensorService, SensorService>();
+builder.Services.AddScoped<ISimulationConfigService, SimulationConfigService>();
 
-// Register AqiSimulationService as a singleton for injection
-builder.Services.AddSingleton<AqiSimulationService>();
+// Register AqiSimulationService as a singleton
+builder.Services.AddSingleton<AqiSimulationService>(); // Explicitly register as injectable service
+builder.Services.AddHostedService(provider => provider.GetRequiredService<AqiSimulationService>()); // Use the same instance as a hosted service
 
-// Register AqiSimulationService as a hosted service (using the same singleton instance)
-builder.Services.AddHostedService(provider => provider.GetRequiredService<AqiSimulationService>());
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -62,7 +60,5 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-var aqiSimulationService = app.Services.GetRequiredService<AqiSimulationService>();
-aqiSimulationService.StartSimulation();
 
 app.Run();
