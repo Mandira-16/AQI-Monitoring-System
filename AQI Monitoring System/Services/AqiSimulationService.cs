@@ -95,6 +95,7 @@ namespace AQI_Monitoring_System.Services
 
         public void StartSimulation()
         {
+
             _isRunning = true;
         }
 
