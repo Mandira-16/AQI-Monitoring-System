@@ -33,48 +33,115 @@ namespace AQI_Monitoring_System.Controllers
 
         public IActionResult Index()
         {
-            // Fetch active sensors and their latest readings
-            var readings = _dbContext.AqiReadings
-                .Include(r => r.Sensor)
-                .Where(r => r.Sensor != null && r.Sensor.IsActive)
-                .GroupBy(r => r.SensorId)
-                .Select(g => g.OrderByDescending(r => r.RecordedAt).FirstOrDefault())
-                .ToList();
+            try
+            {
+                _logger.LogInformation("Starting Index action.");
 
-            // Fetch alert thresholds for legend and colors
-            var thresholds = _dbContext.AlertThresholds.ToList();
+                // Retrieve the most recent reading for each active sensor
+                var readings = _dbContext.AqiReadings
+                    .Include(r => r.Sensor)
+                    .Where(r => r.Sensor != null && r.Sensor.IsActive) // Only include readings from active sensors
+                    .GroupBy(r => r.SensorId)
+                    .Select(g => g.OrderByDescending(r => r.RecordedAt).FirstOrDefault())
+                    .ToList();
+                _logger.LogInformation($"Retrieved {readings.Count} readings in Index action.");
 
-            // Fetch 24-hour history for each active sensor (for map pop-ups)
-            var activeSensorIds = readings.Select(r => r.SensorId).ToList();
-            var history = _dbContext.AqiReadings
-                .Where(r => activeSensorIds.Contains(r.SensorId))
-                .Where(r => r.RecordedAt >= DateTime.UtcNow.AddHours(-24))
-                .OrderBy(r => r.RecordedAt)
-                .ToList()
-                .GroupBy(r => r.SensorId)
-                .ToDictionary(g => g.Key, g => g.ToList());
+                // Retrieve thresholds for AQI color coding
+                var thresholds = _dbContext.AlertThresholds.ToList();
+                _logger.LogInformation($"Retrieved {thresholds.Count} thresholds in Index action.");
 
-            ViewBag.Thresholds = thresholds;
-            ViewBag.History = history; // Pass history for JS chart rendering
-            return View(readings);
+                // Ensure thresholds are not empty; if empty, seed default values
+                if (!thresholds.Any())
+                {
+                    _logger.LogWarning("No thresholds found in AlertThresholds table. Seeding default thresholds.");
+                    thresholds = new List<AlertThreshold>
+            {
+                new AlertThreshold { Category = "Good", MinAqi = 0, MaxAqi = 50, Color = "#009966" },
+                new AlertThreshold { Category = "Moderate", MinAqi = 51, MaxAqi = 100, Color = "#FFDE33" },
+                new AlertThreshold { Category = "Unhealthy for Sensitive Groups", MinAqi = 101, MaxAqi = 150, Color = "#FF9933" },
+                new AlertThreshold { Category = "Unhealthy", MinAqi = 151, MaxAqi = 200, Color = "#CC0033" },
+                new AlertThreshold { Category = "Very Unhealthy", MinAqi = 201, MaxAqi = 300, Color = "#660099" },
+                new AlertThreshold { Category = "Hazardous", MinAqi = 301, MaxAqi = 500, Color = "#7E0023" }
+            };
+                    _dbContext.AlertThresholds.AddRange(thresholds);
+                    _dbContext.SaveChanges();
+                    thresholds = _dbContext.AlertThresholds.ToList();
+                    _logger.LogInformation($"Seeded {thresholds.Count} default thresholds.");
+                }
+
+                // Retrieve all history for each active sensor, without time filtering
+                var activeSensorIds = readings.Select(r => r.SensorId).ToList();
+                var history = _dbContext.AqiReadings
+                    .Where(r => activeSensorIds.Contains(r.SensorId))
+                    .OrderBy(r => r.RecordedAt)
+                    .ToList()
+                    .GroupBy(r => r.SensorId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                ViewBag.Thresholds = thresholds;
+                ViewBag.History = history;
+                _logger.LogInformation("Returning Index view.");
+                return View(readings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in Index action.");
+                throw; // Re-throw the exception to see the error page (for debugging)
+            }
         }
 
-        public IActionResult SensorHistory(string sensorId)
-        {
-            var history = _dbContext.AqiReadings
-                .Where(r => r.SensorId == sensorId)
-                .OrderByDescending(r => r.RecordedAt)
-                .Take(24) // Last 24 hours
-                .ToList();
+		public IActionResult SensorHistory(string sensorId, DateTime? startDate, DateTime? endDate)
+		{
+			try
+			{
+				_logger.LogInformation($"Starting SensorHistory action for SensorId: '{sensorId}', Start: {startDate}, End: {endDate}");
 
-            // Fetch alert thresholds for color coding
-            var thresholds = _dbContext.AlertThresholds.ToList();
-            ViewBag.SensorId = sensorId;
-            ViewBag.Thresholds = thresholds; // Pass thresholds for color consistency
-            return View(history);
-        }
+				// Validate sensorId
+				if (string.IsNullOrWhiteSpace(sensorId))
+				{
+					_logger.LogWarning("SensorId is null or empty.");
+					return BadRequest("Sensor ID is required.");
+				}
 
-        public IActionResult Privacy()
+				// Base query
+				var query = _dbContext.AqiReadings.Where(r => r.SensorId == sensorId);
+
+				// Apply date filters if provided
+				if (startDate.HasValue)
+				{
+					query = query.Where(r => r.RecordedAt >= startDate.Value);
+				}
+
+				if (endDate.HasValue)
+				{
+					// Set end date to end of day
+					var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+					query = query.Where(r => r.RecordedAt <= endOfDay);
+				}
+
+				// Get the filtered history
+				var history = query.OrderByDescending(r => r.RecordedAt).ToList();
+
+				_logger.LogInformation($"Retrieved {history.Count} history records for SensorId '{sensorId}' in SensorHistory action.");
+
+				// Rest of your code remains the same...
+
+				ViewBag.SensorId = sensorId;
+				ViewBag.Thresholds = _dbContext.AlertThresholds.ToList();
+				ViewBag.Sensor = _dbContext.Sensors.FirstOrDefault(s => s.SensorId == sensorId);
+				ViewBag.StartDate = startDate;
+				ViewBag.EndDate = endDate;
+
+				return View(history);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, $"Error in SensorHistory action for SensorId: '{sensorId}'");
+				throw;
+			}
+		}
+
+		public IActionResult Privacy()
         {
             ViewData["ActivePage"] = "Privacy";
             return View();
