@@ -1,6 +1,7 @@
 ﻿// Services/AqiSimulationService.cs
 using AQI_Monitoring_System.Data;
 using AQI_Monitoring_System.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Linq;
@@ -17,18 +18,37 @@ namespace AQI_Monitoring_System.Services
         private int _baselineAqi = 50;
         private int _maxVariation = 100;
 
+        private volatile int _currentIntervalMinutes;
+        private volatile int _currentBaselineAqi;
+        private volatile int _currentMaxVariation;
+
         public AqiSimulationService(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+            _currentIntervalMinutes = _generationIntervalMinutes;
+            _currentBaselineAqi = _baselineAqi;
+            _currentMaxVariation = _maxVariation;
         }
 
         public bool IsRunning => _isRunning;
-        public int GenerationIntervalMinutes => _generationIntervalMinutes;
-        public int BaselineAqi => _baselineAqi;
-        public int MaxVariation => _maxVariation;
+        public int GenerationIntervalMinutes => _currentIntervalMinutes;
+        public int BaselineAqi => _currentBaselineAqi;
+        public int MaxVariation => _currentMaxVariation;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var config = dbContext.SimulationConfigs.FirstOrDefault();
+                if (config != null)
+                {
+                    _currentIntervalMinutes = config.FrequencyMinutes;
+                    _currentBaselineAqi = config.BaselineAqi;
+                    _currentMaxVariation = config.VariationRange;
+                }
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 if (_isRunning)
@@ -41,19 +61,19 @@ namespace AQI_Monitoring_System.Services
 
                         foreach (var sensor in sensors)
                         {
-                            int variation = random.Next(-_maxVariation / 2, _maxVariation / 2);
-                            int aqi = Math.Max(0, Math.Min(500, _baselineAqi + variation));
+                            int variation = random.Next(-_currentMaxVariation / 2, _currentMaxVariation / 2);
+                            int aqi = Math.Max(0, Math.Min(500, _currentBaselineAqi + variation));
                             dbContext.AqiReadings.Add(new AqiReading
                             {
-                                SensorId = sensor.Id,
+                                SensorId = sensor.SensorId, // Corrected to string
                                 Aqi = aqi,
                                 RecordedAt = DateTime.UtcNow
                             });
                         }
-                        await dbContext.SaveChangesAsync();
+                        await dbContext.SaveChangesAsync(stoppingToken);
                     }
                 }
-                await Task.Delay(TimeSpan.FromMinutes(_generationIntervalMinutes), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(_currentIntervalMinutes), stoppingToken);
             }
         }
 
@@ -69,9 +89,9 @@ namespace AQI_Monitoring_System.Services
 
         public void ConfigureSimulation(int intervalMinutes, int baselineAqi, int maxVariation)
         {
-            _generationIntervalMinutes = Math.Max(1, Math.Min(15, intervalMinutes));
-            _baselineAqi = Math.Max(0, Math.Min(500, baselineAqi));
-            _maxVariation = Math.Max(0, Math.Min(500, maxVariation));
+            _currentIntervalMinutes = Math.Max(1, Math.Min(15, intervalMinutes));
+            _currentBaselineAqi = Math.Max(0, Math.Min(500, baselineAqi));
+            _currentMaxVariation = Math.Max(0, Math.Min(500, maxVariation));
         }
     }
 }
