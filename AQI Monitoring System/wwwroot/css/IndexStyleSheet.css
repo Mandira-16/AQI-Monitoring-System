@@ -2,8 +2,7 @@
 #map-container {
     position: relative;
     width: 100%;
-    height: calc(100vh - 120px); /* Subtracting header height + margins */
-    overflow: hidden;
+    height: calc(100vh - 120px); /* Ensure this accounts for header + margins */
     margin-top: 10px;
     margin-bottom: 20px;
     border-radius: 8px;
@@ -17,12 +16,19 @@
     position: relative;
 }
 
+/* Header styling */
+header {
+    z-index: 1000;
+    position: relative;
+}
+
 /* Legend styling */
 .legend {
     background: white;
     padding: 10px;
     border-radius: 5px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border: 1px solid #ccc;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     line-height: 1.8;
 }
 
@@ -51,7 +57,8 @@
     margin-top: 20px;
 }
 
-    .aqi-table th, .aqi-table td {
+    .aqi-table th,
+    .aqi-table td {
         border: 1px solid #ddd;
         padding: 8px;
         text-align: left;
@@ -66,23 +73,7 @@
     margin-top: 30px;
 }
 
-/* Header z-index */
-header {
-    z-index: 1000;
-    position: relative;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    #map-container {
-        height: 400px; /* Fixed height on mobile */
-    }
-
-    .content {
-        margin-top: 20px;
-    }
-}
-
+/* Sensor marker styling */
 .sensor-marker {
     position: relative;
     cursor: pointer;
@@ -97,9 +88,11 @@ header {
     justify-content: center;
     font-weight: bold;
     color: white;
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+    border: 2px solid black;
 }
 
+/* Sensor grid styling */
 .sensor-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -118,4 +111,18 @@ header {
 .sensor-name {
     margin-top: 8px;
     font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #map-container {
+        height: 400px; /* Fixed height on mobile */
+    }
+
+    .content {
+        margin-top: 20px;
+    }
+}
+.container-fluid {
+    padding: 0;
 }
