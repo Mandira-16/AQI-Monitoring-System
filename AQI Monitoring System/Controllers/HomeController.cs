@@ -15,7 +15,7 @@ namespace AQI_Monitoring_System.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly IUserService _userService;
-        private readonly ISensorService _sensorService; 
+        private readonly ISensorService _sensorService;
         private readonly AqiSimulationService _simulationService;
         private readonly ApplicationDbContext _dbContext;
         private readonly ISimulationConfigService _simulationConfigService;
@@ -36,7 +36,6 @@ namespace AQI_Monitoring_System.Controllers
             try
             {
                 _logger.LogInformation("Starting Index action.");
-
                 // Retrieve the most recent reading for each active sensor
                 var readings = _dbContext.AqiReadings
                     .Include(r => r.Sensor)
@@ -76,10 +75,48 @@ namespace AQI_Monitoring_System.Controllers
                     .OrderBy(r => r.RecordedAt)
                     .ToList()
                     .GroupBy(r => r.SensorId)
-                    .ToDictionary(g => g.Key, g => g.ToList());
+                    .ToDictionary(
+                        g => g.Key, // Key is the SensorId (e.g., "S001")
+                        g => g.Select(r => new
+                        {
+                            recordedAt = r.RecordedAt.ToString("o"),
+                            pm25 = r.Pm25 ?? 0.0,
+                            pm10 = r.Pm10 ?? 0.0,
+                            o3 = r.O3 ?? 0.0,
+                            no2 = r.No2 ?? 0.0,
+                            so2 = r.So2 ?? 0.0,
+                            co = r.Co ?? 0.0
+                        }).ToList()
+                    );
 
+                // Log the history data for debugging
+                _logger.LogInformation("History Data:");
+                foreach (var kvp in history)
+                {
+                    _logger.LogInformation($"Sensor {kvp.Key}: {kvp.Value.Count} readings");
+                }
+
+                // Prepare sensors data for the view
+                var sensorsData = readings.Select(r => new
+                {
+                    sensorId = r.SensorId,
+                    lat = r.Sensor != null ? r.Sensor.Latitude : 0.0,
+                    lon = r.Sensor != null ? r.Sensor.Longitude : 0.0,
+                    aqi = r.Aqi,
+                    location = r.Sensor != null ? r.Sensor.Location : "Unknown",
+                    recordedAt = r.RecordedAt.ToString("o"),
+                    pm25 = r.Pm25 ?? 0.0,
+                    pm10 = r.Pm10 ?? 0.0,
+                    o3 = r.O3 ?? 0.0,
+                    no2 = r.No2 ?? 0.0,
+                    so2 = r.So2 ?? 0.0,
+                    co = r.Co ?? 0.0
+                }).ToList();
+
+                // Pass data to the view
                 ViewBag.Thresholds = thresholds;
-                ViewBag.History = history;
+                ViewBag.SensorsData = sensorsData;
+                ViewBag.HistoryData = history; // Pass the dictionary directly
                 _logger.LogInformation("Returning Index view.");
                 return View(readings);
             }
@@ -90,63 +127,69 @@ namespace AQI_Monitoring_System.Controllers
             }
         }
 
-		public IActionResult SensorHistory(string sensorId, DateTime? startDate, DateTime? endDate)
-		{
-			try
-			{
-				_logger.LogInformation($"Starting SensorHistory action for SensorId: '{sensorId}', Start: {startDate}, End: {endDate}");
+        public IActionResult SensorHistory(string sensorId, DateTime? startDate, DateTime? endDate)
+        {
+            try
+            {
+                _logger.LogInformation($"Starting SensorHistory action for SensorId: '{sensorId}', Start: {startDate}, End: {endDate}");
 
-				// Validate sensorId
-				if (string.IsNullOrWhiteSpace(sensorId))
-				{
-					_logger.LogWarning("SensorId is null or empty.");
-					return BadRequest("Sensor ID is required.");
-				}
+                // Validate sensorId
+                if (string.IsNullOrWhiteSpace(sensorId))
+                {
+                    _logger.LogWarning("SensorId is null or empty.");
+                    return BadRequest("Sensor ID is required.");
+                }
 
-				// Base query
-				var query = _dbContext.AqiReadings.Where(r => r.SensorId == sensorId);
+                // Get the sensor
+                var sensor = _dbContext.Sensors.FirstOrDefault(s => s.SensorId == sensorId);
+                if (sensor == null)
+                {
+                    _logger.LogWarning($"Sensor with ID '{sensorId}' not found.");
+                    return RedirectToAction("Index");
+                }
 
-				// Apply date filters if provided
-				if (startDate.HasValue)
-				{
-					query = query.Where(r => r.RecordedAt >= startDate.Value);
-				}
+                // Base query
+                var query = _dbContext.AqiReadings.Where(r => r.SensorId == sensorId);
 
-				if (endDate.HasValue)
-				{
-					// Set end date to end of day
-					var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
-					query = query.Where(r => r.RecordedAt <= endOfDay);
-				}
+                // Apply date filters if provided
+                if (startDate.HasValue)
+                {
+                    query = query.Where(r => r.RecordedAt >= startDate.Value);
+                }
 
-				// Get the filtered history
-				var history = query.OrderByDescending(r => r.RecordedAt).ToList();
+                if (endDate.HasValue)
+                {
+                    // Set end date to end of day
+                    var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                    query = query.Where(r => r.RecordedAt <= endOfDay);
+                }
 
-				_logger.LogInformation($"Retrieved {history.Count} history records for SensorId '{sensorId}' in SensorHistory action.");
+                // Get the filtered history
+                var history = query.OrderByDescending(r => r.RecordedAt).ToList();
 
-				// Rest of your code remains the same...
+                _logger.LogInformation($"Retrieved {history.Count} history records for SensorId '{sensorId}' in SensorHistory action.");
 
-				ViewBag.SensorId = sensorId;
-				ViewBag.Thresholds = _dbContext.AlertThresholds.ToList();
-				ViewBag.Sensor = _dbContext.Sensors.FirstOrDefault(s => s.SensorId == sensorId);
-				ViewBag.StartDate = startDate;
-				ViewBag.EndDate = endDate;
+                ViewBag.SensorId = sensorId;
+                ViewBag.Thresholds = _dbContext.AlertThresholds.ToList();
+                ViewBag.Sensor = sensor;
+                ViewBag.StartDate = startDate;
+                ViewBag.EndDate = endDate;
 
-				return View(history);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, $"Error in SensorHistory action for SensorId: '{sensorId}'");
-				throw;
-			}
-		}
+                return View(history);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error in SensorHistory action for SensorId: '{sensorId}'");
+                throw;
+            }
+        }
 
-		public IActionResult Privacy()
+        public IActionResult Privacy()
         {
             ViewData["ActivePage"] = "Privacy";
             return View();
         }
-        
+
         public IActionResult Login()
         {
             ViewData["ActivePage"] = "Login";
