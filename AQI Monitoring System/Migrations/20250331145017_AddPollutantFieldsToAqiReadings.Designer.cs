@@ -4,6 +4,7 @@ using AQI_Monitoring_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AQI_Monitoring_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250331145017_AddPollutantFieldsToAqiReadings")]
+    partial class AddPollutantFieldsToAqiReadings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -126,47 +129,11 @@ namespace AQI_Monitoring_System.Migrations
                     b.Property<int>("BaselineAqi")
                         .HasColumnType("int");
 
-                    b.Property<double>("BaselineCo")
-                        .HasColumnType("double");
-
-                    b.Property<double>("BaselineNo2")
-                        .HasColumnType("double");
-
-                    b.Property<double>("BaselineO3")
-                        .HasColumnType("double");
-
-                    b.Property<double>("BaselinePm10")
-                        .HasColumnType("double");
-
-                    b.Property<double>("BaselinePm25")
-                        .HasColumnType("double");
-
-                    b.Property<double>("BaselineSo2")
-                        .HasColumnType("double");
-
                     b.Property<int>("FrequencyMinutes")
                         .HasColumnType("int");
 
-                    b.Property<double>("VariationCo")
-                        .HasColumnType("double");
-
-                    b.Property<double>("VariationNo2")
-                        .HasColumnType("double");
-
-                    b.Property<double>("VariationO3")
-                        .HasColumnType("double");
-
-                    b.Property<double>("VariationPm10")
-                        .HasColumnType("double");
-
-                    b.Property<double>("VariationPm25")
-                        .HasColumnType("double");
-
                     b.Property<int>("VariationRange")
                         .HasColumnType("int");
-
-                    b.Property<double>("VariationSo2")
-                        .HasColumnType("double");
 
                     b.HasKey("Id");
 
