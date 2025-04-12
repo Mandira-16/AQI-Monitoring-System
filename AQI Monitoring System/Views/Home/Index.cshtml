@@ -9,150 +9,102 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container">
-	<div class="marker-popup" id="markerPopup" style="display: none; position: absolute; z-index: 1000; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 12px; width: 240px;">
-		<div class="popup-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-			<h5 id="popupLocation" style="margin: 0; font-weight: 600;">Sensor Location</h5>
-			<span id="popupAqi" style="font-size: 24px; font-weight: bold; padding: 2px 8px; border-radius: 4px;">0</span>
-		</div>
-		<div class="popup-body">
-			<p><strong>Last updated:</strong> <span id="popupTime">-</span></p>
-			<div id="popupPollutants" style="margin: 8px 0;">
-				<!-- Pollutant details will be inserted here -->
+	<div class="marker-popup" id="markerPopup" style="display: none; position: absolute; z-index: 1000; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 0; width: 280px; overflow: hidden;">
+		<!-- Popup Header with AQI status and face -->
+		<div class="popup-header" style="padding: 12px; color: white; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+			<div style="display: flex; align-items: center;">
+				<div id="popupFace" style="font-size: 24px; margin-right: 10px;">😐</div>
+				<div>
+					<div id="popupAqi" style="font-size: 24px; font-weight: bold;">150</div>
+					<div id="popupCategory">Unhealthy</div>
+				</div>
 			</div>
-			<a id="popupHistoryLink" class="btn btn-sm btn-primary" style="width: 100%;">View History</a>
+			<button id="closePopup" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+		</div>
+
+		<!-- Updated time -->
+		<div style="padding: 10px 12px; border-bottom: 1px solid #eee; color: #666; font-size: 14px;">
+			updated <span id="popupTime">5 minutes ago</span><br>
+			(<span id="popupDateTime">Mar 31, 2025 7:47 PM</span>)
+		</div>
+
+		<!-- Pollutant charts -->
+		<div style="padding: 10px 12px;">
+			<div style="margin-bottom: 10px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+					<div style="font-weight: bold;">PM<sub>2.5</sub></div>
+					<div id="timeScale" style="display: flex; justify-content:space-between; font-size: 10px; color: #666; width: 100%;">
+						<div>12</div>
+						<div style="margin: 0 10px;">18</div>
+						<div style="margin: 0 10px;">0</div>
+						<div style="margin: 0 10px;">6</div>
+						<div>12</div>
+						<div style="margin-left: 10px;">18</div>
+					</div>
+				</div>
+				<div id="pm25Chart" style="height: 30px; overflow: visible;"></div>
+			</div>
+			<div style="margin-bottom: 10px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+					<div style="font-weight: bold;">PM<sub>10</sub></div>
+				</div>
+				<div id="pm10Chart" style="height: 30px;"></div>
+			</div>
+			<div style="margin-bottom: 10px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+					<div style="font-weight: bold;">O<sub>3</sub></div>
+				</div>
+				<div id="o3Chart" style="height: 30px;"></div>
+			</div>
+			<div style="margin-bottom: 10px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+					<div style="font-weight: bold;">NO<sub>2</sub></div>
+				</div>
+				<div id="no2Chart" style="height: 30px;"></div>
+			</div>
+			<div style="margin-bottom: 10px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+					<div style="font-weight: bold;">SO<sub>2</sub></div>
+				</div>
+				<div id="so2Chart" style="height: 30px;"></div>
+			</div>
+			<div style="margin-bottom: 10px;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+					<div style="font-weight: bold;">CO</div>
+				</div>
+				<div id="coChart" style="height: 30px;"></div>
+			</div>
+		</div>
+
+		<!-- More info button -->
+		<div style="padding: 10px 12px 15px;">
+			<a id="popupHistoryLink" class="btn btn-secondary" style="width: 100%; text-align: center; padding: 8px; border-radius: 4px; background-color: #f0f0f0; color: #333; text-decoration: none;">
+				Click for more information
+			</a>
+		</div>
+
+		<!-- Past 12 months chart -->
+		<div style="padding: 12px; border-top: 1px solid #eee;">
+			<div style="margin-bottom: 8px; font-weight: bold;">past 12 months PM<sub>2.5</sub></div>
+			<div id="yearlyPM25Chart" style="height: 140px;"></div>
+		</div>
+
+		<!-- Source information -->
+		<div style="padding: 10px 12px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee;">
+			Source: Simulated Data (AQI Monitoring System), <span id="popupLocation">Station akurana</span>
 		</div>
 	</div>
+
 	<!-- Map -->
-	<div id="map-container">
-		<div id="map" style="height: 400px;"></div>
+	<div class="container-fluid">
+		<div id="map-container" style="position: relative;">
+			<div id="map"></div>
+		</div>
 	</div>
-	<script>
-		// Global variables for popup management
-		let popup = document.getElementById('markerPopup');
-		let activeMarker = null;
-		let markerElements = [];  // This will be populated after markers are created
-
-		// Function to show popup when hovering over a marker
-		function showPopup(event, marker) {
-			activeMarker = marker;
-
-			// Get marker data
-			const sensorId = marker.getAttribute('data-sensor-id');
-			const location = marker.getAttribute('data-location');
-			const aqi = marker.getAttribute('data-aqi');
-			const updated = marker.getAttribute('data-updated');
-
-			// Set popup content
-			document.getElementById('popupLocation').textContent = location;
-			document.getElementById('popupAqi').textContent = aqi;
-			document.getElementById('popupTime').textContent = updated;
-
-			// Set background color based on AQI value
-			const aqiValue = parseInt(aqi);
-			let bgColor = getAqiColor(aqiValue);
-			document.getElementById('popupAqi').style.backgroundColor = bgColor;
-
-			// Set text color (white for dark backgrounds, black for light backgrounds)
-			document.getElementById('popupAqi').style.color =
-				(aqiValue > 100) ? 'white' : 'black';
-
-			// Populate pollutants
-			let pollutantsHtml = '';
-			if (marker.getAttribute('data-pm25'))
-				pollutantsHtml += `<div>PM2.5: ${marker.getAttribute('data-pm25')} μg/m³</div>`;
-			if (marker.getAttribute('data-pm10'))
-				pollutantsHtml += `<div>PM10: ${marker.getAttribute('data-pm10')} μg/m³</div>`;
-			if (marker.getAttribute('data-o3'))
-				pollutantsHtml += `<div>O₃: ${marker.getAttribute('data-o3')} ppb</div>`;
-			if (marker.getAttribute('data-no2'))
-				pollutantsHtml += `<div>NO₂: ${marker.getAttribute('data-no2')} ppb</div>`;
-
-			document.getElementById('popupPollutants').innerHTML = pollutantsHtml;
-
-			// Set history link
-			document.getElementById('popupHistoryLink').href = `/Home/SensorHistory?sensorId=${sensorId}`;
-
-			// Position popup near marker
-			const rect = marker.getBoundingClientRect();
-			popup.style.left = (rect.left + window.scrollX) + 'px';
-			popup.style.top = (rect.bottom + window.scrollY + 10) + 'px'; // 10px below marker
-
-			// Show popup
-			popup.style.display = 'block';
-
-			// Add hover capability to the popup itself
-			popup.addEventListener('mouseenter', () => {
-				popup.style.display = 'block';
-			});
-
-			popup.addEventListener('mouseleave', hidePopupIfNotHovered);
-		}
-
-		// Function to hide popup when mouse leaves marker and popup
-		function hidePopupIfNotHovered() {
-			// Use a short timeout to check if we're now hovering over the popup
-			setTimeout(() => {
-				const isHoveringPopup = popup.matches(':hover');
-				const isHoveringMarker = activeMarker && activeMarker.matches(':hover');
-
-				if (!isHoveringPopup && !isHoveringMarker) {
-					popup.style.display = 'none';
-				}
-			}, 100);
-		}
-
-		// Helper function to get color based on AQI
-		function getAqiColor(aqi) {
-			if (aqi <= 50) return '#009966'; // Good
-			if (aqi <= 100) return '#FFDE33'; // Moderate
-			if (aqi <= 150) return '#FF9933'; // Unhealthy for Sensitive Groups
-			if (aqi <= 200) return '#CC0033'; // Unhealthy
-			if (aqi <= 300) return '#660099'; // Very Unhealthy
-			return '#7E0023'; // Hazardous
-		}
-
-		// Example for Leaflet.js implementation
-		function createMarkers(map, sensorData) {
-			sensorData.forEach(sensor => {
-				// Create a marker with appropriate icon
-				const markerIcon = L.divIcon({
-					className: 'sensor-marker',
-					html: `<div class="marker-circle" style="background-color: ${getAqiColor(sensor.aqi)};">${sensor.aqi}</div>`,
-					iconSize: [40, 40]
-				});
-
-				const marker = L.marker([sensor.latitude, sensor.longitude], { icon: markerIcon });
-
-				// Set data attributes
-				const markerElement = marker.getElement();
-				markerElement.setAttribute('data-sensor-id', sensor.sensorId);
-				markerElement.setAttribute('data-location', sensor.location);
-				markerElement.setAttribute('data-aqi', sensor.aqi);
-				markerElement.setAttribute('data-updated', new Date(sensor.recordedAt).toLocaleString());
-
-				// Add pollutant data if available
-				if (sensor.pm25) markerElement.setAttribute('data-pm25', sensor.pm25);
-				if (sensor.pm10) markerElement.setAttribute('data-pm10', sensor.pm10);
-				if (sensor.o3) markerElement.setAttribute('data-o3', sensor.o3);
-				if (sensor.no2) markerElement.setAttribute('data-no2', sensor.no2);
-
-				marker.addTo(map);
-
-				// Store marker element for later use
-				markerElements.push(markerElement);
-			});
-
-			// Set up event listeners for markers after they're created
-			markerElements.forEach(marker => {
-				marker.addEventListener('mouseenter', (e) => showPopup(e, marker));
-				marker.addEventListener('mouseleave', hidePopupIfNotHovered);
-			});
-		}
-	</script>
 
 	<div class="content mt-4">
 		<h2>Real-Time Air Quality in Colombo</h2>
-		<p>View the latest Air Quality Index (AQI) readings from sensors across Colombo.</p>
+		<p>View the latest Air Quality Index (AQI) readings from sensors across Sri Lanka.</p>
 
 		<!-- Latest Readings Table -->
 		<div class="row mt-3">
@@ -166,6 +118,12 @@
 								<th>Sensor ID</th>
 								<th>Location</th>
 								<th>AQI</th>
+								<th>PM2.5 (µg/m³)</th>
+								<th>PM10 (µg/m³)</th>
+								<th>O3 (ppb)</th>
+								<th>NO2 (ppb)</th>
+								<th>SO2 (ppb)</th>
+								<th>CO (ppm)</th>
 								<th>Recorded At</th>
 								<th>History</th>
 							</tr>
@@ -177,7 +135,13 @@
 									<td>@reading.SensorId</td>
 									<td>@(reading.Sensor?.Location ?? "Unknown")</td>
 									<td style="background-color: @(GetAqiColor(reading.Aqi))">@reading.Aqi</td>
-									<td>@reading.RecordedAt.ToString("yyyy-MM-dd HH:mm")</td>
+									<td>@(reading.Pm25?.ToString("F2") ?? "N/A")</td>
+									<td>@(reading.Pm10?.ToString("F2") ?? "N/A")</td>
+									<td>@(reading.O3?.ToString("F2") ?? "N/A")</td>
+									<td>@(reading.No2?.ToString("F2") ?? "N/A")</td>
+									<td>@(reading.So2?.ToString("F2") ?? "N/A")</td>
+									<td>@(reading.Co?.ToString("F2") ?? "N/A")</td>
+									<td>@reading.RecordedAt.AddHours(5.5).ToString("yyyy-MM-dd HH:mm")</td>
 									<td><a href="@Url.Action("SensorHistory", new { sensorId = reading.SensorId })" class="btn btn-sm btn-info">View History</a></td>
 								</tr>
 							}
@@ -259,86 +223,395 @@
 	</div>
 </div>
 
-<style>
-	.aqi-table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-
-		.aqi-table th, .aqi-table td {
-			padding: 8px;
-			border: 1px solid #ddd;
-		}
-
-		.aqi-table th {
-			background-color: #f2f2f2;
-		}
-
-	.legend {
-		background: white;
-		padding: 10px;
-		border: 1px solid #ccc;
-	}
-
-		.legend i {
-			width: 18px;
-			height: 18px;
-			float: left;
-			margin-right: 8px;
-		}
-</style>
-
 @section Scripts {
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 	<script>
-		var map = L.map('map').setView([6.9271, 79.8612], 12);
-		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-		}).addTo(map);
+		// Global variables for popup management
+		let popup = document.getElementById('markerPopup');
+		let activeMarker = null;
+		let markerElements = [];
+		let map;
 
-		var sensors = @Html.Raw(Json.Serialize(Model.Select(r => new { sensorId = r.SensorId, lat = r.Sensor.Latitude, lon = r.Sensor.Longitude, aqi = r.Aqi, location = r.Sensor.Location })));
-		var history = @Html.Raw(Json.Serialize(ViewBag.History));
-		var thresholds = @Html.Raw(Json.Serialize(ViewBag.Thresholds));
+		document.addEventListener('DOMContentLoaded', function () {
+			console.log('DOM fully loaded');
+			console.log('Script started');
+			try {
+				console.log('Initializing map');
+				// Initialize the map
+				map = L.map('map').setView([6.9271, 79.8612], 12);
+				L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+				}).addTo(map);
 
-		function getAqiColor(aqi) {
-			for (var i = 0; i < thresholds.length; i++) {
-				if (aqi >= thresholds[i].minAqi && aqi <= thresholds[i].maxAqi) {
-					return thresholds[i].color;
+				// Force the map to resize after initialization
+				setTimeout(() => {
+					map.invalidateSize();
+				}, 100);
+
+				// Add a resize event listener to handle window resizing
+				window.addEventListener('resize', () => {
+					map.invalidateSize();
+				});
+				console.log('Tile layer added');
+
+				// Define thresholds, sensors, and history
+				var thresholds = @Html.Raw(Json.Serialize(ViewBag.Thresholds ?? new List<AQI_Monitoring_System.Models.AlertThreshold>()));
+				console.log('Thresholds:', thresholds);
+
+				var sensors = @Html.Raw(Json.Serialize(Model != null ? Model.Select(r => new
+			{
+				sensorId = r.SensorId,
+				lat = r.Sensor != null ? r.Sensor.Latitude : 0.0,
+				lon = r.Sensor != null ? r.Sensor.Longitude : 0.0,
+				aqi = r.Aqi,
+				location = r.Sensor != null ? (r.Sensor.Location ?? "Unknown").Replace("\"", "\\\"") : "Unknown",
+				recordedAt = r.RecordedAt.ToString("o"),
+				pm25 = r.Pm25 ?? 0.0,
+				pm10 = r.Pm10 ?? 0.0,
+				o3 = r.O3 ?? 0.0,
+				no2 = r.No2 ?? 0.0,
+				so2 = r.So2 ?? 0.0,
+				co = r.Co ?? 0.0
+			}).ToList() : new List<object>()));
+				console.log('Sensors:', sensors);
+
+				var history = @Html.Raw(Json.Serialize(ViewBag.HistoryData ?? new Dictionary<string, List<object>>()));
+				console.log('History:', history);
+				Object.keys(history).forEach(sensorId => {
+					console.log(`History for ${sensorId}:`, history[sensorId]);
+				});
+				// Function to get AQI color based on thresholds
+				function getAqiColor(aqi) {
+					for (var i = 0; i < thresholds.length; i++) {
+						if (aqi >= thresholds[i].minAqi && aqi <= thresholds[i].maxAqi) {
+							return thresholds[i].color;
+						}
+					}
+					return '#000000';
 				}
+
+				// Function to get emoji face based on AQI
+				function getAqiFace(aqi) {
+					if (aqi <= 50) return '😊'; // Good
+					if (aqi <= 100) return '😐'; // Moderate
+					if (aqi <= 150) return '😕'; // Unhealthy for Sensitive Groups
+					if (aqi <= 200) return '😷'; // Unhealthy
+					if (aqi <= 300) return '🤢'; // Very Unhealthy
+					return '☠️'; // Hazardous
+				}
+
+				// Function to get category name based on AQI
+				function getAqiCategory(aqi) {
+					if (aqi <= 50) return 'Good';
+					if (aqi <= 100) return 'Moderate';
+					if (aqi <= 150) return 'Unhealthy for Sensitive Groups';
+					if (aqi <= 200) return 'Unhealthy';
+					if (aqi <= 300) return 'Very Unhealthy';
+					return 'Hazardous';
+				}
+
+				// Function to get time difference in a readable format
+				function getTimeDifference(timestamp) {
+					const now = new Date();
+					const recordedTime = new Date(timestamp);
+					recordedTime.setMinutes(recordedTime.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
+					const diffMs = now - recordedTime;
+					const diffMins = Math.floor(diffMs / 60000);
+
+					if (diffMins < 1) return 'just now';
+					if (diffMins === 1) return '1 minute ago';
+					if (diffMins < 60) return `${diffMins} minutes ago`;
+
+					const diffHours = Math.floor(diffMins / 60);
+					if (diffHours === 1) return '1 hour ago';
+					if (diffHours < 24) return `${diffHours} hours ago`;
+
+					const diffDays = Math.floor(diffHours / 24);
+					if (diffDays === 1) return '1 day ago';
+					return `${diffDays} days ago`;
+				}
+
+				// Function to format date and time in SLST
+				function formatDateTime(timestamp) {
+					const date = new Date(timestamp);
+					date.setMinutes(date.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
+					const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+					const month = months[date.getMonth()];
+					const day = date.getDate();
+					const year = date.getFullYear();
+
+					let hours = date.getHours();
+					const ampm = hours >= 12 ? 'PM' : 'AM';
+					hours = hours % 12;
+					hours = hours ? hours : 12; // Hour '0' should be '12'
+					const minutes = date.getMinutes().toString().padStart(2, '0');
+
+					return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+				}
+
+				// Function to create a bar chart for pollutants using Chart.js
+				function createPollutantChart(elementId, data, pollutant, label, color) {
+					const container = document.getElementById(elementId);
+					container.innerHTML = '';
+					const canvas = document.createElement('canvas');
+					container.appendChild(canvas);
+
+					const last24Hours = data.filter(reading => {
+						const readingTime = new Date(reading.recordedAt);
+						return (new Date() - readingTime) <= 24 * 60 * 60 * 1000; // Last 24 hours
+					});
+
+					const chartData = last24Hours.map(reading => reading[pollutant] !== null && reading[pollutant] !== undefined ? reading[pollutant] : 0);
+
+					new Chart(canvas, {
+						type: 'bar',
+						data: {
+							labels: last24Hours.map(r => new Date(r.recordedAt).toLocaleTimeString()),
+							datasets: [{
+								label: label,
+								data: chartData,
+								backgroundColor: color,
+								borderColor: color,
+								borderWidth: 1
+							}]
+						},
+						options: {
+							scales: {
+								y: { beginAtZero: true, display: false },
+								x: { display: false }
+							},
+							plugins: {
+								legend: { display: false }
+							},
+							maintainAspectRatio: false
+						}
+					});
+				}
+
+				// Function to create a heatmap for yearly data
+				function createYearlyHeatmap(elementId, data) {
+					const container = document.getElementById(elementId);
+					container.innerHTML = '';
+
+					// Month labels
+					const monthsDiv = document.createElement('div');
+					monthsDiv.style.display = 'flex';
+					monthsDiv.style.marginBottom = '5px';
+
+					const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+					months.forEach(month => {
+						const monthLabel = document.createElement('div');
+						monthLabel.textContent = month;
+						monthLabel.style.flex = '1';
+						monthLabel.style.fontSize = '12px';
+						monthLabel.style.color = '#666';
+						monthsDiv.appendChild(monthLabel);
+					});
+					container.appendChild(monthsDiv);
+
+					// Calculate daily averages
+					const dailyAverages = {};
+					data.forEach(r => {
+						const date = new Date(r.recordedAt);
+						const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+						if (!dailyAverages[key]) {
+							dailyAverages[key] = { total: 0, count: 0 };
+						}
+						dailyAverages[key].total += (r.pm25 !== null && r.pm25 !== undefined ? r.pm25 : 0);
+						dailyAverages[key].count += 1;
+					});
+
+					// Determine the earliest date in the data
+					const earliestDate = data.length > 0 ? new Date(Math.min(...data.map(r => new Date(r.recordedAt)))) : new Date();
+					const today = new Date();
+					const startDate = new Date(Math.max(earliestDate, new Date(today.getFullYear(), today.getMonth() - 11, 1)));
+
+					const heatmapData = [];
+					for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+						const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+						const avg = dailyAverages[key] ? dailyAverages[key].total / dailyAverages[key].count : 0;
+						heatmapData.push({ date: new Date(d), value: avg });
+					}
+
+					// Create the heatmap grid
+					const heatmapDiv = document.createElement('div');
+					heatmapDiv.style.display = 'flex';
+					heatmapDiv.style.flexDirection = 'column';
+					heatmapDiv.style.height = '100px';
+
+					const daysInMonth = [];
+					for (let m = startDate.getMonth(); m <= today.getMonth() + 12; m++) {
+						const monthDate = new Date(startDate.getFullYear(), m % 12, 1);
+						daysInMonth.push(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate());
+					}
+
+					const maxDays = Math.max(...daysInMonth);
+					for (let row = 0; row < 5; row++) {
+						const rowDiv = document.createElement('div');
+						rowDiv.style.display = 'flex';
+						rowDiv.style.flex = '1';
+						rowDiv.style.marginBottom = '2px';
+
+						for (let col = 0; col < 31; col++) {
+							const monthIndex = Math.floor(col / 2.6);
+							const dayIndex = col % 31;
+							const date = new Date(startDate.getFullYear(), startDate.getMonth() + monthIndex, dayIndex + 1);
+							if (date > today) {
+								continue; // Skip future dates
+							}
+
+							const entry = heatmapData.find(d => d.date.getDate() === (dayIndex + 1) && d.date.getMonth() === (date.getMonth()) && d.date.getFullYear() === date.getFullYear());
+							const value = entry ? entry.value : 0;
+
+							const cell = document.createElement('div');
+							cell.style.flex = '1';
+							cell.style.marginRight = '2px';
+							cell.style.height = '100%';
+							cell.style.backgroundColor = value === 0 ? '#eee' : getAqiColorForValue(value);
+							rowDiv.appendChild(cell);
+						}
+
+						heatmapDiv.appendChild(rowDiv);
+					}
+
+					container.appendChild(heatmapDiv);
+				}
+
+				// Helper function to get color based on PM2.5 value for heatmap
+				function getAqiColorForValue(value) {
+					if (value <= 12) return '#00FF00'; // Good
+					if (value <= 35) return '#FFFF00'; // Moderate
+					if (value <= 55) return '#FFA500'; // Unhealthy for Sensitive Groups
+					if (value <= 150) return '#FF0000'; // Unhealthy
+					if (value <= 250) return '#800080'; // Very Unhealthy
+					return '#7E0023'; // Hazardous
+				}
+
+				// Function to show popup when hovering over a marker
+				function showPopup(event, marker) {
+					activeMarker = marker;
+
+					// Get marker data
+					const { sensorId, location, aqi, recordedAt } = marker.sensorData;
+
+					// Set popup content
+					document.getElementById('popupLocation').textContent = location;
+					document.getElementById('popupAqi').textContent = aqi;
+					document.getElementById('popupCategory').textContent = getAqiCategory(aqi);
+					document.getElementById('popupFace').textContent = getAqiFace(aqi);
+
+					// Set time information
+					document.getElementById('popupTime').textContent = getTimeDifference(recordedAt);
+					document.getElementById('popupDateTime').textContent = formatDateTime(recordedAt);
+
+					// Set background color based on AQI value
+					let bgColor = getAqiColor(aqi);
+					document.querySelector('.popup-header').style.backgroundColor = bgColor;
+
+					// Fetch historical data for this sensor
+					const sensorHistory = history[sensorId] || [];
+
+					// Create the pollutant charts
+					createPollutantChart('pm25Chart', sensorHistory, 'pm25', 'PM2.5 (µg/m³)', '#FF9933'); // Orange for PM2.5
+					createPollutantChart('pm10Chart', sensorHistory, 'pm10', 'PM10 (µg/m³)', '#FFDE33'); // Yellow for PM10
+					createPollutantChart('o3Chart', sensorHistory, 'o3', 'O3 (ppb)', '#00C4B4'); // Teal for O3
+					createPollutantChart('no2Chart', sensorHistory, 'no2', 'NO2 (ppb)', '#FF69B4'); // Pink for NO2
+					createPollutantChart('so2Chart', sensorHistory, 'so2', 'SO2 (ppb)', '#4682B4'); // Steel blue for SO2
+					createPollutantChart('coChart', sensorHistory, 'co', 'CO (ppm)', '#FFD700'); // Gold for CO
+
+					// Create the yearly heatmap
+					createYearlyHeatmap('yearlyPM25Chart', sensorHistory);
+
+					// Set history link
+					document.getElementById('popupHistoryLink').href = `/Home/SensorHistory?sensorId=${sensorId}`;
+
+					// Position popup near marker
+					const latlng = marker.getLatLng();
+					const point = map.latLngToContainerPoint(latlng);
+					const mapRect = map.getContainer().getBoundingClientRect();
+					const popupRect = popup.getBoundingClientRect();
+					let left = point.x - 140;
+					let top = point.y - 350;
+
+					// Clamp position
+					if (left < 0) left = 0;
+					if (left + popupRect.width > mapRect.width) left = mapRect.width - popupRect.width;
+					if (top < 0) top = 0;
+					if (top + popupRect.height > mapRect.height) top = mapRect.height - popupRect.height;
+
+					popup.style.left = left + 'px';
+					popup.style.top = top + 'px';
+
+					// Show popup
+					popup.style.display = 'block';
+
+					// Add event listener to close button
+					document.getElementById('closePopup').addEventListener('click', function () {
+						popup.style.display = 'none';
+					});
+				}
+
+				// Function to hide popup when mouse leaves marker and popup
+				function hidePopupIfNotHovered() {
+					setTimeout(() => {
+						const isHoveringPopup = popup.matches(':hover');
+						const isHoveringMarker = activeMarker && activeMarker._icon && activeMarker._icon.matches(':hover');
+
+						if (!isHoveringPopup && !isHoveringMarker) {
+							popup.style.display = 'none';
+						}
+					}, 100);
+				}
+
+				// Function to create markers on the map
+				function createMarkers(map, sensorData) {
+					sensorData.forEach(sensor => {
+						const markerIcon = L.divIcon({
+							className: 'sensor-marker',
+							html: `<div class="marker-circle" style="background-color: ${getAqiColor(sensor.aqi)};">${sensor.aqi}</div>`,
+							iconSize: [40, 40]
+						});
+
+						const marker = L.marker([sensor.lat, sensor.lon], { icon: markerIcon }).addTo(map);
+
+						marker.sensorData = {
+							sensorId: sensor.sensorId,
+							location: sensor.location,
+							aqi: sensor.aqi,
+							recordedAt: sensor.recordedAt,
+							pm25: sensor.pm25,
+							pm10: sensor.pm10,
+							o3: sensor.o3,
+							no2: sensor.no2,
+							so2: sensor.so2,
+							co: sensor.co
+						};
+
+						marker.on('mouseover', (e) => showPopup(e, marker));
+						marker.on('mouseout', hidePopupIfNotHovered);
+						marker.on('click', (e) => showPopup(e, marker));
+					});
+				}
+
+				// Add AQI legend to the map
+				var legend = L.control({ position: 'bottomright' });
+				legend.onAdd = function (map) {
+					var div = L.DomUtil.create('div', 'legend');
+					div.innerHTML = '<h4>AQI Legend</h4>';
+					thresholds.forEach(function (t) {
+						div.innerHTML += `<i style="background: ${t.color}"></i> ${t.category} (${t.minAqi}-${t.maxAqi})<br>`;
+					});
+					return div;
+				};
+
+				// Now create markers and add the legend
+				createMarkers(map, sensors);
+				legend.addTo(map);
+			} catch (error) {
+				console.error('Error initializing map:', error);
 			}
-			return '#000000';
-		}
-
-		sensors.forEach(function (sensor) {
-			var color = getAqiColor(sensor.aqi);
-			var marker = L.circleMarker([sensor.lat, sensor.lon], {
-				radius: 8,
-				fillColor: color,
-				color: "#000",
-				weight: 1,
-				opacity: 1,
-				fillOpacity: 0.8
-			}).addTo(map);
-
-			var popupContent = `
-								<b>${sensor.location} (Sensor ${sensor.sensorId})</b><br>
-								Current AQI: ${sensor.aqi}<br>
-								<a href="/Home/SensorHistory?sensorId=${sensor.sensorId}&period=day">View History</a>
-							`;
-			marker.bindPopup(popupContent);
 		});
-
-		var legend = L.control({ position: 'bottomright' });
-		legend.onAdd = function (map) {
-			var div = L.DomUtil.create('div', 'legend');
-			div.innerHTML = '<h4>AQI Legend</h4>';
-			thresholds.forEach(function (t) {
-				div.innerHTML += `<i style="background: ${t.color}"></i> ${t.category} (${t.minAqi}-${t.maxAqi})<br>`;
-			});
-			return div;
-		};
-		legend.addTo(map);
 	</script>
 }
 
