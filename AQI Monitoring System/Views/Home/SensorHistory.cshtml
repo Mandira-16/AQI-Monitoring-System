@@ -35,7 +35,7 @@
 				<ul>
 					@foreach (var item in Model.Take(3))
 					{
-						<li>AQI: @item.Aqi, Time: @item.RecordedAt</li>
+						<li>AQI: @item.Aqi, Time: @item.RecordedAt.AddHours(5.5)</li>
 					}
 				</ul>
 			}
@@ -74,6 +74,7 @@
 
 			for (var i = 0; i < chartData.length; i++) {
 				var date = new Date(chartData[i].recordedAt);
+				date.setMinutes(date.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
 				if (!isNaN(date.getTime())) {
 					labels.push(date.toLocaleString());
 					data.push(chartData[i].aqi);
@@ -100,7 +101,7 @@
 						x: {
 							title: {
 								display: true,
-								text: 'Date and Time'
+								text: 'Date and Time (SLST)'
 							}
 						},
 						y: {
@@ -157,6 +158,7 @@
 					html += '<p><strong>First 3 records:</strong></p><ul>';
 					for (var i = 0; i < Math.min(3, data.length); i++) {
 						var date = new Date(data[i].recordedAt);
+						date.setMinutes(date.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
 						html += '<li>AQI: ' + data[i].aqi + ', Time: ' + date.toLocaleString() + '</li>';
 					}
 					html += '</ul>';
