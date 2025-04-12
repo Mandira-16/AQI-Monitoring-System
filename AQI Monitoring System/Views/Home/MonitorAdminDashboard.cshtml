@@ -147,7 +147,7 @@
                                                     <td>@(reading.Sensor?.SensorId ?? "Unknown")</td>
                                                     <td>@(reading.Sensor?.Location ?? "Unknown")</td>
                                                     <td class="@GetAqiClass(reading.Aqi)">@reading.Aqi</td>
-                                                    <td>@reading.RecordedAt.ToString("MMM dd, yyyy h:mm tt")</td>
+                                                    <td>@reading.RecordedAt.AddHours(5.5).ToString("MMM dd, yyyy h:mm tt")</td>
                                                 </tr>
                                             }
                                         }
