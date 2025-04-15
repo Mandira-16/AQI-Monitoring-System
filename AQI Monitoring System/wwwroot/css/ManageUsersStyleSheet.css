@@ -1,0 +1,198 @@
+﻿:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --accent-color: #e74c3c;
+    --light-bg: #f8f9fa;
+    --dark-bg: #343a40;
+    --success: #2ecc71;
+    --warning: #f39c12;
+    --danger: #e74c3c;
+    --info: #3498db;
+}
+
+body {
+    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+.container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.dashboard-card {
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+    border: none;
+    background-color: white;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+    }
+
+.card-header {
+    background-color: var(--secondary-color);
+    color: white;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 15px;
+    border-bottom: none;
+}
+
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 10px 20px;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        border-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    }
+
+.btn-danger {
+    background-color: var(--danger);
+    border-color: var(--danger);
+}
+
+    .btn-danger:hover {
+        background-color: #c0392b;
+        border-color: #c0392b;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+    }
+
+.btn-secondary {
+    background-color: #95a5a6;
+    border-color: #95a5a6;
+}
+
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+        border-color: #7f8c8d;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(127, 140, 141, 0.3);
+    }
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    }
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #27ae60;
+    border-left: 4px solid #2ecc71;
+}
+
+.alert-danger {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #c0392b;
+    border-left: 4px solid #e74c3c;
+}
+
+.section-heading {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #ebedf2;
+    color: var(--secondary-color);
+    font-weight: 600;
+    position: relative;
+}
+
+    .section-heading::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        background-color: var(--primary-color);
+    }
+
+.users-table {
+    margin-bottom: 2rem;
+}
+
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+    .table th {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-weight: 600;
+        border-bottom: 2px solid #e9ecef;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        padding: 12px 15px;
+    }
+
+    .table td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.user-actions {
+    display: flex;
+    gap: 5px;
+}
+
+/* Top decorative line for visual interest */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    z-index: 1000;
+}
