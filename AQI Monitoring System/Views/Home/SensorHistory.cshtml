@@ -4,53 +4,77 @@
 	ViewData["Title"] = $"History for Sensor {ViewBag.SensorId}";
 	var sensor = ViewBag.Sensor as AQI_Monitoring_System.Models.Sensor;
 }
-<div class="container">
-	<h2>History for Sensor @ViewBag.SensorId (@sensor?.Location)</h2>
 
-	<div class="row mb-4">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="~/css/SensorHistoryStyleSheet.css" asp-append-version="true" />
+
+<div class="container">
+	<div class="row justify-content-center mt-1">
 		<div class="col-md-12">
-			<form id="filterForm" class="form-inline">
-				<div class="form-group mr-2">
-					<label for="startDate" class="mr-2">From:</label>
-					<input type="date" id="startDate" name="startDate" class="form-control" />
+			<div class="card dashboard-card">
+				<div class="card-header">
+					<h4 class="text-center m-0">
+						<i class="bi bi-clock-history me-2"></i>History for Sensor @ViewBag.SensorId (@sensor?.Location)
+					</h4>
 				</div>
-				<div class="form-group mr-2">
-					<label for="endDate" class="mr-2">To:</label>
-					<input type="date" id="endDate" name="endDate" class="form-control" />
+				<div class="card-body">
+					<div class="row mb-4">
+						<div class="col-md-12">
+							<form id="filterForm" class="d-flex flex-wrap gap-3 align-items-end">
+								<div class="form-group">
+									<label for="startDate" class="form-label">From:</label>
+									<input type="date" id="startDate" name="startDate" class="form-control" />
+								</div>
+								<div class="form-group">
+									<label for="endDate" class="form-label">To:</label>
+									<input type="date" id="endDate" name="endDate" class="form-control" />
+								</div>
+								<button type="button" id="applyFilter" class="btn btn-primary">
+									<i class="bi bi-funnel me-2"></i>Apply Filter
+								</button>
+								<button type="button" id="resetFilter" class="btn btn-outline-secondary">
+									<i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+								</button>
+							</form>
+						</div>
+					</div>
+
+					<!-- ADD THIS SECTION FOR DEBUGGING: Data Verification -->
+					@*@if (Model != null)
+					{
+						<div id="debugInfo" class="alert alert-info">
+							<p><strong>Debug Info:</strong> Model count: @Model.Count</p>
+							@if (Model.Any())
+							{
+								<p><strong>First 3 records:</strong></p>
+								<ul>
+									@foreach (var item in Model.Take(3))
+									{
+										<li>AQI: @item.Aqi, Time: @item.RecordedAt.AddHours(5.5)</li>
+									}
+								</ul>
+							}
+						</div>
+					}*@
+					<!-- END OF ADDED SECTION -->
+					@if (Model.Any())
+					{
+						<canvas id="historyChart" width="800" height="400"></canvas>
+					}
+					else
+					{
+						<p>No history available for this sensor.</p>
+					}
+					<div class="text-center mt-4">
+						<a href="@Url.Action("Index")" class="btn btn-outline-primary">
+							<i class="bi bi-arrow-left me-2"></i>Back
+						</a>
+					</div>
 				</div>
-				<button type="button" id="applyFilter" class="btn btn-primary">Apply Filter</button>
-				<button type="button" id="resetFilter" class="btn btn-secondary ml-2">Reset</button>
-			</form>
+			</div>
 		</div>
 	</div>
-
-	<!-- ADD THIS SECTION FOR DEBUGGING: Data Verification -->
-	@if (Model != null)
-	{
-		<div id="debugInfo" class="alert alert-info">
-			<p><strong>Debug Info:</strong> Model count: @Model.Count</p>
-			@if (Model.Any())
-			{
-				<p><strong>First 3 records:</strong></p>
-				<ul>
-					@foreach (var item in Model.Take(3))
-					{
-						<li>AQI: @item.Aqi, Time: @item.RecordedAt.AddHours(5.5)</li>
-					}
-				</ul>
-			}
-		</div>
-	}
-	<!-- END OF ADDED SECTION -->
-	@if (Model.Any())
-	{
-		<canvas id="historyChart" width="800" height="400"></canvas>
-	}
-	else
-	{
-		<p>No history available for this sensor.</p>
-	}
-	<a href="@Url.Action("Index")" class="btn btn-secondary mt-3">Back to Dashboard</a>
 </div>
 @section Scripts {
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -101,17 +125,41 @@
 						x: {
 							title: {
 								display: true,
-								text: 'Date and Time (SLST)'
+								text: 'Date and Time (SLST)',
+								color: '#495057',
+								font: {
+									weight: '500'
+								}
+							},
+							ticks: {
+								color: '#495057'
 							}
 						},
 						y: {
 							title: {
 								display: true,
-								text: 'AQI'
+								text: 'AQI',
+								color: '#495057',
+								font: {
+									weight: '500'
+								}
 							},
 							beginAtZero: true,
 							suggestedMin: 0,
-							suggestedMax: 500
+							suggestedMax: 500,
+							ticks: {
+								color: '#495057'
+							}
+						}
+					},
+					plugins: {
+						legend: {
+							labels: {
+								color: '#495057',
+								font: {
+									weight: '500'
+								}
+							}
 						}
 					}
 				}
@@ -158,7 +206,7 @@
 					html += '<p><strong>First 3 records:</strong></p><ul>';
 					for (var i = 0; i < Math.min(3, data.length); i++) {
 						var date = new Date(data[i].recordedAt);
-						date.setMinutes(date.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
+						date.setMinutes(date.getMinutes() + 330);
 						html += '<li>AQI: ' + data[i].aqi + ', Time: ' + date.toLocaleString() + '</li>';
 					}
 					html += '</ul>';
