@@ -9,70 +9,73 @@
     <meta charset="utf-8" />
     <title>Register</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/LoginStyleSheet.css"/>
-    <style>
-        .error-message { color: red; font-size: 0.875em; margin-top: 0.25em; }
-        .is-invalid { border-color: red; }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/LoginStyleSheet.css" asp-append-version="true" />
 </head>
 <body>
     <div class="container">
         <div class="row justify-content-center mt-5">
             <div class="col-md-6">
-                <div class="card">
+                <div class="card dashboard-card">
                     <div class="card-header">
-                        <h4 class="text-center">Register</h4>
+                        <h4 class="text-center m-0">
+                            <i class="bi bi-person-plus me-2"></i>Register New Member
+                        </h4>
                     </div>
                     <div class="card-body">
                         @if (TempData["SuccessMessage"] != null)
                         {
                             <div class="alert alert-success">
-                                @TempData["SuccessMessage"]
+                                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
                             </div>
                         }
                         <form id="registerForm" method="post" asp-controller="Home" asp-action="Register">
-                            <div class="form-group mb-3">
-                                <label asp-for="Username">Username</label>
+                            <div class="mb-3">
+                                <label asp-for="Username" class="form-label">Username</label>
                                 <input asp-for="Username" class="form-control" placeholder="Enter username" />
-                                <div id="usernameError" class="error-message"></div>
-                                <span asp-validation-for="Username" class="error-message"></span>
+                                <div id="usernameError" class="field-validation-error"></div>
+                                <span asp-validation-for="Username" class="field-validation-error"></span>
                             </div>
-                            <div class="form-group mb-3">
-                                <label asp-for="Email">Email</label>
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label">Email</label>
                                 <input asp-for="Email" class="form-control" placeholder="Enter email" />
-                                <span asp-validation-for="Email" class="error-message"></span>
+                                <div id="emailError" class="field-validation-error"></div>
+                                <span asp-validation-for="Email" class="field-validation-error"></span>
                             </div>
-                            <div class="form-group mb-3">
-                                <label asp-for="Password">Password</label>
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">Password</label>
                                 <input asp-for="Password" class="form-control" placeholder="Enter password" />
-                                <div id="passwordError" class="error-message"></div>
-                                <span asp-validation-for="Password" class="error-message"></span>
+                                <div id="passwordError" class="field-validation-error"></div>
+                                <span asp-validation-for="Password" class="field-validation-error"></span>
                             </div>
-                            <div class="form-group mb-3">
-                                <label asp-for="ConfirmPassword">Confirm Password</label>
+                            <div class="mb-3">
+                                <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
                                 <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm password" />
-                                <div id="confirmPasswordError" class="error-message"></div>
-                                <span asp-validation-for="ConfirmPassword" class="error-message"></span>
+                                <div id="confirmPasswordError" class="field-validation-error"></div>
+                                <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
                             </div>
-                            <!-- Added Role selection dropdown -->
-                            <div class="form-group mb-3">
-                                <label asp-for="Role">Role</label>
+                            <div class="mb-3">
+                                <label asp-for="Role" class="form-label">Role</label>
                                 <select asp-for="Role" class="form-control">
                                     <option value="">Select a role</option>
                                     <option value="User">User</option>
                                     <option value="Admin">Admin</option>
                                 </select>
-                                <div id="roleError" class="error-message"></div>
-                                <span asp-validation-for="Role" class="error-message"></span>
+                                <div id="roleError" class="field-validation-error"></div>
+                                <span asp-validation-for="Role" class="field-validation-error"></span>
                             </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary" id="registerButton">Register</button>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <button type="submit" class="btn btn-primary" id="registerButton">
+                                    <i class="bi bi-person-plus-fill me-2"></i>Register
+                                </button>
                             </div>
                         </form>
                     </div>
-                    <div class="card-footer text-center">
-                        <p class="mb-0">Already have an account? <a asp-controller="Home" asp-action="Login">Login</a></p>
-                    </div>
+                </div>
+                <div class="text-center mt-3 mb-5">
+                    <a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                    </a>
                 </div>
             </div>
         </div>
@@ -86,12 +89,11 @@
             const usernameField = $('#Username');
             const passwordField = $('#Password');
             const confirmPasswordField = $('#ConfirmPassword');
-            const emailField = $('#Email'); // Added email field for validation
-            const roleField = $('#Role'); // Added role field
+            const emailField = $('#Email');
+            const roleField = $('#Role');
             const registerButton = $('#registerButton');
             let isUsernameUnique = false;
 
-            // Track whether each field has been touched
             let touched = {
                 username: false,
                 email: false,
@@ -100,16 +102,13 @@
                 role: false
             };
 
-            // Mark field as touched on input or blur
             usernameField.on('input blur', () => { touched.username = true; validateUsername(); updateButtonState(); });
             emailField.on('input blur', () => { touched.email = true; validateEmail(); updateButtonState(); });
             passwordField.on('input blur', () => { touched.password = true; validatePassword(); updateButtonState(); });
             confirmPasswordField.on('input blur', () => { touched.confirmPassword = true; validateConfirmPassword(); updateButtonState(); });
             roleField.on('change blur', () => { touched.role = true; validateRole(); updateButtonState(); });
 
-            // Form submission validation
             $('#registerForm').on('submit', function (e) {
-                // Mark all fields as touched on submit
                 touched.username = true;
                 touched.email = true;
                 touched.password = true;
@@ -122,7 +121,7 @@
             });
 
             function validateUsername() {
-                if (!touched.username) return true; // Skip validation if not touched
+                if (!touched.username) return true;
                 const username = usernameField.val().trim();
                 const usernameError = $('#usernameError');
                 usernameField.removeClass('is-invalid');
@@ -139,7 +138,6 @@
                     return false;
                 }
 
-                // Check uniqueness via AJAX (simplified for demo)
                 $.ajax({
                     url: '/Home/CheckUsername',
                     method: 'POST',
@@ -159,9 +157,8 @@
                 return true;
             }
 
-            // Added email validation function
             function validateEmail() {
-                if (!touched.email) return true; // Skip validation if not touched
+                if (!touched.email) return true;
                 const email = emailField.val().trim();
                 const emailError = $('#emailError');
                 emailField.removeClass('is-invalid');
@@ -183,7 +180,7 @@
             }
 
             function validatePassword() {
-                if (!touched.password) return true; // Skip validation if not touched
+                if (!touched.password) return true;
                 const password = passwordField.val().trim();
                 const passwordError = $('#passwordError');
                 passwordField.removeClass('is-invalid');
@@ -215,13 +212,12 @@
                     return false;
                 }
 
-                // Re-validate confirm password when password changes
                 validateConfirmPassword();
                 return true;
             }
 
             function validateConfirmPassword() {
-                if (!touched.confirmPassword) return true; // Skip validation if not touched
+                if (!touched.confirmPassword) return true;
                 const password = passwordField.val().trim();
                 const confirmPassword = confirmPasswordField.val().trim();
                 const confirmPasswordError = $('#confirmPasswordError');
@@ -243,8 +239,7 @@
             }
 
             function validateRole() {
-                if (!touched.role) return true; // Skip validation if not touched
-
+                if (!touched.role) return true;
                 const role = roleField.val();
                 const roleError = $('#roleError');
                 roleField.removeClass('is-invalid');
@@ -261,7 +256,7 @@
 
             function validateForm() {
                 const isUsernameValid = validateUsername();
-                const isEmailValid = validateEmail(); // Added email validation to the form
+                const isEmailValid = validateEmail();
                 const isPasswordValid = validatePassword();
                 const isConfirmPasswordValid = validateConfirmPassword();
                 const isRoleValid = validateRole();
