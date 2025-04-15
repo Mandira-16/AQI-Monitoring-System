@@ -54,17 +54,17 @@ body {
     letter-spacing: 0.5px;
 }
 
-.btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+button.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
 }
 
-    .btn-primary:hover {
-        background-color: #2980b9;
-        border-color: #2980b9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-    }
+.btn-primary:hover {
+    background-color: #2980b9 !important;
+    border-color: #2980b9 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
 
 .btn-outline-primary {
     color: var(--primary-color);
