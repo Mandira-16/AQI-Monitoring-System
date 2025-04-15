@@ -14,7 +14,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="row justify-content-center mt-5">
+        <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card dashboard-card">
                     <div class="card-header">
@@ -64,18 +64,16 @@
                                 <div id="roleError" class="field-validation-error"></div>
                                 <span asp-validation-for="Role" class="field-validation-error"></span>
                             </div>
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <div class="d-flex gap-4 justify-content-center mt-4 mb-5">
                                 <button type="submit" class="btn btn-primary" id="registerButton">
                                     <i class="bi bi-person-plus-fill me-2"></i>Register
                                 </button>
+                                <a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                                </a>
                             </div>
                         </form>
                     </div>
-                </div>
-                <div class="text-center mt-3 mb-5">
-                    <a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-                    </a>
                 </div>
             </div>
         </div>
