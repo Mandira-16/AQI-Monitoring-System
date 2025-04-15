@@ -10,7 +10,8 @@
     <meta charset="utf-8" />
     <title>Configure Alerts</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/MADStyleSheet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="~/css/ConfigAlertsStyleSheet.css" />
 </head>
 <body>
     <div class="container">
@@ -18,13 +19,20 @@
             <div class="col-md-8">
                 <div class="card dashboard-card mt-4">
                     <div class="card-header">
-                        <h4 class="text-center">Configure Alert Thresholds</h4>
+                        <h4 class="text-center m-0">
+                            <i class="bi bi-bell me-2"></i>Configure Alert Thresholds
+                        </h4>
                     </div>
                     <div class="card-body">
                         @if (TempData["SuccessMessage"] != null)
                         {
-                            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                            </div>
                         }
+
+                        <h5 class="section-heading"><i class="bi bi-sliders me-2"></i>Alert Categories</h5>
+                        <p class="mb-4">Define AQI thresholds for different air quality categories and their associated colors.</p>
 
                         <form asp-action="ConfigureAlerts" method="post">
                             <table class="table">
@@ -43,35 +51,56 @@
                                             <td>
                                                 <input type="hidden" asp-for="@Model[i].Id" />
                                                 <input asp-for="@Model[i].Category" class="form-control" />
-                                                <span asp-validation-for="@Model[i].Category" class="text-danger"></span>
+                                                <span asp-validation-for="@Model[i].Category" class="text-danger">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                                    <span asp-validation-for="@Model[i].Category"></span>
+                                                </span>
                                             </td>
                                             <td>
                                                 <input asp-for="@Model[i].MinAqi" class="form-control" />
-                                                <span asp-validation-for="@Model[i].MinAqi" class="text-danger"></span>
+                                                <span asp-validation-for="@Model[i].MinAqi" class="text-danger">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                                    <span asp-validation-for="@Model[i].MinAqi"></span>
+                                                </span>
                                             </td>
                                             <td>
                                                 <input asp-for="@Model[i].MaxAqi" class="form-control" />
-                                                <span asp-validation-for="@Model[i].MaxAqi" class="text-danger"></span>
+                                                <span asp-validation-for="@Model[i].MaxAqi" class="text-danger">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                                    <span asp-validation-for="@Model[i].MaxAqi"></span>
+                                                </span>
                                             </td>
                                             <td>
                                                 <input asp-for="@Model[i].Color" class="form-control" />
-                                                <span asp-validation-for="@Model[i].Color" class="text-danger"></span>
+                                                <span asp-validation-for="@Model[i].Color" class="text-danger">
+                                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                                    <span asp-validation-for="@Model[i].Color"></span>
+                                                </span>
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
-                                <a asp-action="MonitorAdminDashboard" class="btn btn-secondary">Cancel</a>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-2"></i>Save Changes
+                                </button>
+                                <a asp-action="MonitorAdminDashboard" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Cancel
+                                </a>
                             </div>
                         </form>
                     </div>
                 </div>
+
+                <div class="text-center mt-3 mb-5">
+                    <a asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-
     @section Scripts {
         <partial name="_ValidationScriptsPartial" />
     }
