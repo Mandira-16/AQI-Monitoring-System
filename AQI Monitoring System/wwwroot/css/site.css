@@ -30,9 +30,9 @@ body {
     margin-bottom: 60px;
 }
 
-.navbar {
+.navbar.navbar-expand-lg {
     background-color: var(--secondary-color) !important;
-    padding: 15px 20px;
+    padding: 20px 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -81,23 +81,24 @@ body {
 }
 
 .footer {
-    background-color: #fff;
+    background-color: var(--secondary-color);
     border-top: 1px solid #e9ecef;
     position: absolute;
     bottom: 0;
     width: 100%;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+    color:white;
 }
 
     .footer a {
-        color: var(--primary-color);
+        color: #bde3fc;
         text-decoration: none;
         font-weight: 500;
         transition: color 0.3s ease;
     }
 
         .footer a:hover {
-            color: #2980b9;
+            color: #96d2fa;
         }
 
 body::before {
