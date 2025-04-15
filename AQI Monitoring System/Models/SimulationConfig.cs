@@ -1,12 +1,20 @@
-﻿// Models/SimulationConfig.cs
+﻿using System.ComponentModel.DataAnnotations; // Required for validation attributes
+
 namespace AQI_Monitoring_System.Models
 {
-    public class SimulationConfig
-    {
-        public int Id { get; set; }
-        public int FrequencyMinutes { get; set; }
-        public int BaselineAqi { get; set; }
-        public int VariationRange { get; set; }
+	public class SimulationConfig
+	{
+		public int Id { get; set; }
+
+		[Range(1, 60, ErrorMessage = "Frequency must be between 1 and 60 minutes.")]
+		public int FrequencyMinutes { get; set; }
+
+		[Range(0, 500, ErrorMessage = "Baseline AQI must be between 0 and 500.")]
+		public int BaselineAqi { get; set; }
+
+		[Range(0, 500, ErrorMessage = "Variation Range must be between 0 and 500.")]
+		public int VariationRange { get; set; }
+
 		public double BaselinePm25 { get; set; }
 		public double VariationPm25 { get; set; }
 		public double BaselinePm10 { get; set; }
