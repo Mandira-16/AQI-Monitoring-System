@@ -1,7 +1,7 @@
 ﻿@model AQI_Monitoring_System.Models.SimulationConfig
 
 @{
-	ViewData["Title"] = "Configure Simulation";
+    ViewData["Title"] = "Configure Simulation";
 }
 
 <title>Configure Simulation</title>
@@ -10,125 +10,228 @@
 <link rel="stylesheet" href="~/css/ConfigSimulationStyleSheet.css" />
 
 <div class="container pb-5">
-	<div class="row justify-content-center">
-		<div class="col-md-6">
-			<div class="card dashboard-card mt-4">
-				<div class="card-header">
-					<h4 class="text-center m-0">
-						<i class="bi bi-gear me-2"></i>Configure Simulation Parameters
-					</h4>
-				</div>
-				<div class="card-body">
-					@if (TempData["SuccessMessage"] != null)
-					{
-						<div class="alert alert-success">
-							<i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
-						</div>
-					}
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card dashboard-card mt-4">
+                <div class="card-header">
+                    <h4 class="text-center m-0">
+                        <i class="bi bi-gear me-2"></i>Configure Simulation Parameters
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                        </div>
+                    }
 
-					<h5 class="section-heading">
-						<i class="bi bi-sliders me-2"></i>Simulation Settings
-					</h5>
-					<p class="mb-4">Define the parameters that control how AQI data is simulated across all sensors.</p>
+                    <h5 class="section-heading">
+                        <i class="bi bi-sliders me-2"></i>Simulation Settings
+                    </h5>
+                    <p class="mb-4">Define the parameters that control how AQI data is simulated across all sensors.</p>
 
-					<form id="simulationConfigForm" asp-action="ConfigureSimulation" method="post">
-						<input type="hidden" asp-for="Id" />
+                    <form id="simulationConfigForm" asp-action="ConfigureSimulation" method="post">
+                        <input type="hidden" asp-for="Id" />
 
-						<div class="parameter-card">
-							<div class="d-flex align-items-center mb-2">
-								<i class="bi bi-clock me-3"></i>
-								<h6 class="mb-0">Time Interval</h6>
-							</div>
-							<div class="mb-3">
-								<label asp-for="FrequencyMinutes" class="form-label">Frequency (minutes)</label>
-								<input asp-for="FrequencyMinutes" class="form-control" />
-								<span asp-validation-for="FrequencyMinutes" class="text-danger"></span>
-								<small class="form-text text-muted">
-									<i class="bi bi-info-circle me-1"></i>Data generation interval (1-60 minutes).
-								</small>
-							</div>
-						</div>
+                        <div class="parameter-card">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-clock me-3"></i>
+                                <h6 class="mb-0">Time Interval</h6>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="FrequencyMinutes" class="form-label">Frequency (minutes)</label>
+                                <input asp-for="FrequencyMinutes" class="form-control" />
+                                <span asp-validation-for="FrequencyMinutes" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>Data generation interval (1-60 minutes).
+                                </small>
+                            </div>
+                        </div>
 
-						<div class="parameter-card">
-							<div class="d-flex align-items-center mb-2">
-								<i class="bi bi-graph-up me-3"></i>
-								<h6 class="mb-0">AQI Configuration</h6>
-							</div>
-							<div class="mb-3">
-								<label asp-for="BaselineAqi" class="form-label">Baseline AQI</label>
-								<input asp-for="BaselineAqi" class="form-control" />
-								<span asp-validation-for="BaselineAqi" class="text-danger"></span>
-								<small class="form-text text-muted">
-									<i class="bi bi-info-circle me-1"></i>Starting AQI value (0-500).
-								</small>
-							</div>
-						</div>
+                        <div class="parameter-card">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-graph-up me-3"></i>
+                                <h6 class="mb-0">AQI Configuration</h6>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="BaselineAqi" class="form-label">Baseline AQI</label>
+                                <input asp-for="BaselineAqi" class="form-control" />
+                                <span asp-validation-for="BaselineAqi" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>Starting AQI value (0-500).
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="VariationRange" class="form-label">Variation Range</label>
+                                <input asp-for="VariationRange" class="form-control" />
+                                <span asp-validation-for="VariationRange" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>Max deviation from baseline (0-500).
+                                </small>
+                            </div>
+                        </div>
 
-						<div class="parameter-card">
-							<div class="d-flex align-items-center mb-2">
-								<i class="bi bi-arrow-up-down me-3"></i>
-								<h6 class="mb-0">Data Variation</h6>
-							</div>
-							<div class="mb-3">
-								<label asp-for="VariationRange" class="form-label">Variation Range</label>
-								<input asp-for="VariationRange" class="form-control" />
-								<span asp-validation-for="VariationRange" class="text-danger"></span>
-								<small class="form-text text-muted">
-									<i class="bi bi-info-circle me-1"></i>Max deviation from baseline (0-500).
-								</small>
-							</div>
-						</div>
+                        <!-- New Section for Pollutant Parameters -->
+                        <div class="parameter-card">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-cloud-haze2-fill me-3"></i>
+                                <h6 class="mb-0">Pollutant Parameters</h6>
+                            </div>
+                            <div class="row">
+                                <!-- PM2.5 -->
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="BaselinePm25" class="form-label">Baseline PM2.5 (µg/m³)</label>
+                                    <input asp-for="BaselinePm25" class="form-control" />
+                                    <span asp-validation-for="BaselinePm25" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Starting PM2.5 value.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="VariationPm25" class="form-label">PM2.5 Variation</label>
+                                    <input asp-for="VariationPm25" class="form-control" />
+                                    <span asp-validation-for="VariationPm25" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Max deviation for PM2.5.
+                                    </small>
+                                </div>
+                                <!-- PM10 -->
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="BaselinePm10" class="form-label">Baseline PM10 (µg/m³)</label>
+                                    <input asp-for="BaselinePm10" class="form-control" />
+                                    <span asp-validation-for="BaselinePm10" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Starting PM10 value.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="VariationPm10" class="form-label">PM10 Variation</label>
+                                    <input asp-for="VariationPm10" class="form-control" />
+                                    <span asp-validation-for="VariationPm10" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Max deviation for PM10.
+                                    </small>
+                                </div>
+                                <!-- O3 -->
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="BaselineO3" class="form-label">Baseline O3 (ppb)</label>
+                                    <input asp-for="BaselineO3" class="form-control" />
+                                    <span asp-validation-for="BaselineO3" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Starting O3 value.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="VariationO3" class="form-label">O3 Variation</label>
+                                    <input asp-for="VariationO3" class="form-control" />
+                                    <span asp-validation-for="VariationO3" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Max deviation for O3.
+                                    </small>
+                                </div>
+                                <!-- NO2 -->
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="BaselineNo2" class="form-label">Baseline NO2 (ppb)</label>
+                                    <input asp-for="BaselineNo2" class="form-control" />
+                                    <span asp-validation-for="BaselineNo2" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Starting NO2 value.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="VariationNo2" class="form-label">NO2 Variation</label>
+                                    <input asp-for="VariationNo2" class="form-control" />
+                                    <span asp-validation-for="VariationNo2" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Max deviation for NO2.
+                                    </small>
+                                </div>
+                                <!-- SO2 -->
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="BaselineSo2" class="form-label">Baseline SO2 (ppb)</label>
+                                    <input asp-for="BaselineSo2" class="form-control" />
+                                    <span asp-validation-for="BaselineSo2" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Starting SO2 value.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="VariationSo2" class="form-label">SO2 Variation</label>
+                                    <input asp-for="VariationSo2" class="form-control" />
+                                    <span asp-validation-for="VariationSo2" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Max deviation for SO2.
+                                    </small>
+                                </div>
+                                <!-- CO -->
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="BaselineCo" class="form-label">Baseline CO (ppm)</label>
+                                    <input asp-for="BaselineCo" class="form-control" />
+                                    <span asp-validation-for="BaselineCo" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Starting CO value.
+                                    </small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="VariationCo" class="form-label">CO Variation</label>
+                                    <input asp-for="VariationCo" class="form-control" />
+                                    <span asp-validation-for="VariationCo" class="text-danger"></span>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>Max deviation for CO.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
 
-						<div class="d-flex gap-2 justify-content-end mt-4">
-							<button type="submit" class="btn btn-primary">
-								<i class="bi bi-save me-2"></i>Save Changes
-							</button>
-							<a asp-action="MonitorAdminDashboard" class="btn btn-secondary">
-								<i class="bi bi-x-circle me-2"></i>Cancel
-							</a>
-							<a asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
-								<i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-							</a>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Save Changes
+                            </button>
+                            <a asp-action="MonitorAdminDashboard" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                            <a asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
 @section Scripts {
-	<script src="~/lib/jquery/dist/jquery.min.js"></script>
-	<script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
-	<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 
-	<script>
-		$(document).ready(function () {
-			console.log("jQuery loaded successfully: " + $.fn.jquery);
-			console.log("jQuery validation loaded: " + ($.validator ? "Yes" : "No"));
-			console.log("jQuery validation unobtrusive loaded: " + ($.validator.unobtrusive ? "Yes" : "No"));
+    <script>
+        $(document).ready(function () {
+            console.log("jQuery loaded successfully: " + $.fn.jquery);
+            console.log("jQuery validation loaded: " + ($.validator ? "Yes" : "No"));
+            console.log("jQuery validation unobtrusive loaded: " + ($.validator.unobtrusive ? "Yes" : "No"));
 
-			// Re-parse the specific form to apply validation
-			if ($.validator && $.validator.unobtrusive) {
-				console.log("Parsing form for validation...");
-				$.validator.unobtrusive.parse("#simulationConfigForm");
+            if ($.validator && $.validator.unobtrusive) {
+                console.log("Parsing form for validation...");
+                $.validator.unobtrusive.parse("#simulationConfigForm");
 
-				// Debug: Log when validation is triggered
-				$("#simulationConfigForm").validate({
-					debug: true, // Enable jQuery Validation debug mode
-					errorPlacement: function (error, element) {
-						console.log("Validation error for " + element.attr("name") + ": " + error.text());
-						error.insertAfter(element); // Ensure errors are placed correctly
-					}
-				});
+                $("#simulationConfigForm").validate({
+                    debug: true,
+                    errorPlacement: function (error, element) {
+                        console.log("Validation error for " + element.attr("name") + ": " + error.text());
+                        error.insertAfter(element);
+                    }
+                });
 
-				// Trigger validation on input change or keyup
-				$("#simulationConfigForm input").on("change keyup", function () {
-					console.log("Triggering validation for: " + $(this).attr("name"));
-					$(this).valid();
-				});
-			} else {
-				console.warn("Unobtrusive validation not loaded, skipping form parse.");
-			}
-		});
-	</script>
+                $("#simulationConfigForm input").on("change keyup", function () {
+                    console.log("Triggering validation for: " + $(this).attr("name"));
+                    $(this).valid();
+                });
+            } else {
+                console.warn("Unobtrusive validation not loaded, skipping form parse.");
+            }
+        });
+    </script>
 }
