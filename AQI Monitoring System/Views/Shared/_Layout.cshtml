@@ -1,59 +1,61 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>@ViewData["Title"] - AQI_Monitoring_System</title>
-	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AQI Monitoring System</title>
+    <!-- Bootstrap and Bootstrap Icons moved here -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-	<header>
-		@{
-			var actionName = ViewContext.RouteData.Values["action"]?.ToString();
-			var actionsWithoutNavbar = new[] { "MonitorAdminDashboard", "ConfigureAlerts", "ConfigureSimulation", "EditSensor", "EditUser", "ManageUsers", "Register" };
-		}
+    <header>
+        @{
+            var actionName = ViewContext.RouteData.Values["action"]?.ToString();
+            var actionsWithoutNavbar = new[] { "MonitorAdminDashboard", "ConfigureAlerts", "ConfigureSimulation", "EditSensor", "EditUser", "ManageUsers", "Register" };
+        }
 
-		@if (!actionsWithoutNavbar.Contains(actionName))
-		{
-			<nav class="navbar navbar-expand-lg">
-				<div class="container-fluid">
-					<a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-						<i class="bi bi-globe me-2"></i>World's Air Pollution: Air Quality Index
-					</a>
-					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-						<span class="navbar-toggler-icon"></span>
-					</button>
-					<div class="collapse navbar-collapse" id="navbarNav">
-						<ul class="navbar-nav ms-auto">
-							<li class="nav-item">
-								<a class="nav-link @((ViewData["ActivePage"] as string) == "Home" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-							</li>
-							<li class="nav-item">
-								<a class="nav-link @((ViewData["ActivePage"] as string) == "Privacy" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-							</li>
-							<li class="nav-item">
-								<a class="nav-link @((ViewData["ActivePage"] as string) == "Login" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</nav>
-		}
-	</header>
-	<div class="container">
-		<main role="main" class="pb-3">
-			@RenderBody()
-		</main>
-	</div>
-	<footer class="footer">
-		<div class="container text-center py-3">
-			<p class="mb-0">&copy; 2025 - AQI Monitoring System | <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy Policy</a></p>
-		</div>
-	</footer>
-	<script src="~/lib/jquery/dist/jquery.min.js"></script>
-	<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-	<script src="~/js/site.js" asp-append-version="true"></script>
-	@await RenderSectionAsync("Scripts", required: false)
+        @if (!actionsWithoutNavbar.Contains(actionName))
+        {
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid">
+                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-globe me-2"></i>World's Air Pollution: Air Quality Index
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link @((ViewData["ActivePage"] as string) == "Home" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @((ViewData["ActivePage"] as string) == "Privacy" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link @((ViewData["ActivePage"] as string) == "Login" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        }
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    <footer class="footer">
+        <div class="container text-center py-3">
+            <p class="mb-0">© 2025 - AQI Monitoring System | <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy Policy</a></p>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
