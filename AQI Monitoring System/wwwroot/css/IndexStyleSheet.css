@@ -420,3 +420,8 @@ body::before {
         width: 240px;
     }
 }
+
+/* Override map height for Index page */
+#map-container {
+    height: 600px !important; /* Increased height for Index page */
+}
