@@ -1,0 +1,547 @@
+﻿@model List<AQI_Monitoring_System.Models.AqiReading>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<!-- Map-specific styles -->
+<style>
+    #map-container {
+        height: 400px; /* Default height for all pages */
+        width: 100%;
+    }
+
+    #map {
+        height: 100%;
+        width: 100%;
+    }
+
+    .marker-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #000;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: bold;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        line-height: 18px;
+        color: #555;
+    }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+
+        .legend h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            color: #777;
+        }
+</style>
+
+<!-- Chart.js for pop-up trends -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid">
+    <div class="marker-popup" id="markerPopup" style="display: none; position: absolute; z-index: 1000; background-color: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 0; width: 280px; overflow: hidden;">
+        <!-- Popup content -->
+        <div class="popup-header" style="padding: 12px; color: white; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <div id="popupFace" style="font-size: 24px; margin-right: 10px;">😐</div>
+                <div>
+                    <div id="popupAqi" style="font-size: 24px; font-weight: bold;">150</div>
+                    <div id="popupCategory">Unhealthy</div>
+                </div>
+            </div>
+            <button id="closePopup" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <div style="padding: 10px 12px; border-bottom: 1px solid #eee; color: #666; font-size: 14px;">
+            updated <span id="popupTime">5 minutes ago</span><br>
+            (<span id="popupDateTime">Mar 31, 2025 7:47 PM</span>)
+        </div>
+
+        <div style="padding: 10px 12px;">
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">PM<sub>2.5</sub></div>
+                    <div id="timeScale" style="display: flex; justify-content:space-between; font-size: 10px; color: #666; width: 100%;">
+                        <div>12</div>
+                        <div style="margin: 0 10px;">18</div>
+                        <div style="margin: 0 10px;">0</div>
+                        <div style="margin: 0 10px;">6</div>
+                        <div>12</div>
+                        <div style="margin-left: 10px;">18</div>
+                    </div>
+                </div>
+                <div id="pm25Chart" style="height: 30px; overflow: visible;"></div>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">PM<sub>10</sub></div>
+                </div>
+                <div id="pm10Chart" style="height: 30px;"></div>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">O<sub>3</sub></div>
+                </div>
+                <div id="o3Chart" style="height: 30px;"></div>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">NO<sub>2</sub></div>
+                </div>
+                <div id="no2Chart" style="height: 30px;"></div>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">SO<sub>2</sub></div>
+                </div>
+                <div id="so2Chart" style="height: 30px;"></div>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="font-weight: bold;">CO</div>
+                </div>
+                <div id="coChart" style="height: 30px;"></div>
+            </div>
+        </div>
+
+        <div style="padding: 10px 12px 15px;">
+            <a id="popupHistoryLink" class="btn btn-secondary" style="width: 100%; text-align: center; padding: 8px; border-radius: 4px; background-color: #f0f0f0; color: #333; text-decoration: none;">
+                Click for more information
+            </a>
+        </div>
+
+        <div style="padding: 12px; border-top: 1px solid #eee;">
+            <div style="margin-bottom: 8px; font-weight: bold;">past 12 months PM<sub>2.5</sub></div>
+            <div id="yearlyPM25Chart" style="height: 140px;"></div>
+        </div>
+
+        <div style="padding: 10px 12px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee;">
+            Source: Simulated Data (AQI Monitoring System), <span id="popupLocation">Station akurana</span>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map-container" style="position: relative; height: 400px; width: 100%;">
+        <div id="map" style="height: 100%; width: 100%;"></div>
+    </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    // Global variables for popup management
+    let popup = document.getElementById('markerPopup');
+    let activeMarker = null;
+    let markerElements = [];
+    let map;
+
+    if (!window.mapInitialized) {
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOM fully loaded');
+            console.log('Script started');
+            try {
+                console.log('Initializing map');
+                // Initialize the map
+                map = L.map('map').setView([6.9271, 79.8612], 12);
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(map);
+
+                // Force the map to resize after initialization
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 500);
+
+                // Add a resize event listener to handle window resizing
+                window.addEventListener('resize', () => {
+                    map.invalidateSize();
+                });
+                console.log('Tile layer added');
+
+                // Define thresholds, sensors, and history
+                var thresholds = @Html.Raw(Json.Serialize(ViewBag.Thresholds ?? new List<AQI_Monitoring_System.Models.AlertThreshold>()));
+                console.log('Thresholds:', thresholds);
+
+                var sensors = @Html.Raw(Json.Serialize(Model != null ? Model.Where(r => r.Sensor != null && r.Sensor.Latitude != 0 && r.Sensor.Longitude != 0).Select(r => new
+        {
+            sensorId = r.SensorId,
+            lat = r.Sensor.Latitude,
+            lon = r.Sensor.Longitude,
+            aqi = r.Aqi,
+            location = (r.Sensor.Location ?? "Unknown").Replace("\"", "\\\""),
+            recordedAt = r.RecordedAt.ToString("o"),
+            pm25 = r.Pm25 ?? 0.0,
+            pm10 = r.Pm10 ?? 0.0,
+            o3 = r.O3 ?? 0.0,
+            no2 = r.No2 ?? 0.0,
+            so2 = r.So2 ?? 0.0,
+            co = r.Co ?? 0.0
+        }).ToList() : new List<object>()));
+                console.log('Sensors:', sensors);
+
+                var history = @Html.Raw(Json.Serialize(ViewBag.HistoryData ?? new Dictionary<string, List<object>>()));
+                console.log('History:', history);
+                Object.keys(history).forEach(sensorId => {
+                    console.log(`History for ${sensorId}:`, history[sensorId]);
+                });
+
+                // Function to get AQI color based on thresholds
+                function getAqiColor(aqi) {
+                    for (var i = 0; i < thresholds.length; i++) {
+                        if (aqi >= thresholds[i].minAqi && aqi <= thresholds[i].maxAqi) {
+                            return thresholds[i].color;
+                        }
+                    }
+                    return '#000000';
+                }
+
+                // Function to get emoji face based on AQI
+                function getAqiFace(aqi) {
+                    if (aqi <= 50) return '😊'; // Good
+                    if (aqi <= 100) return '😐'; // Moderate
+                    if (aqi <= 150) return '😕'; // Unhealthy for Sensitive Groups
+                    if (aqi <= 200) return '😷'; // Unhealthy
+                    if (aqi <= 300) return '🤢'; // Very Unhealthy
+                    return '☠️'; // Hazardous
+                }
+
+                // Function to get category name based on AQI
+                function getAqiCategory(aqi) {
+                    if (aqi <= 50) return 'Good';
+                    if (aqi <= 100) return 'Moderate';
+                    if (aqi <= 150) return 'Unhealthy for Sensitive Groups';
+                    if (aqi <= 200) return 'Unhealthy';
+                    if (aqi <= 300) return 'Very Unhealthy';
+                    return 'Hazardous';
+                }
+
+                // Function to get time difference in a readable format
+                function getTimeDifference(timestamp) {
+                    const now = new Date();
+                    const recordedTime = new Date(timestamp);
+                    recordedTime.setMinutes(recordedTime.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
+                    const diffMs = now - recordedTime;
+                    const diffMins = Math.floor(diffMs / 60000);
+
+                    if (diffMins < 1) return 'just now';
+                    if (diffMins === 1) return '1 minute ago';
+                    if (diffMins < 60) return `${diffMins} minutes ago`;
+
+                    const diffHours = Math.floor(diffMins / 60);
+                    if (diffHours === 1) return '1 hour ago';
+                    if (diffHours < 24) return `${diffHours} hours ago`;
+
+                    const diffDays = Math.floor(diffHours / 24);
+                    if (diffDays === 1) return '1 day ago';
+                    return `${diffDays} days ago`;
+                }
+
+                // Function to format date and time in SLST
+                function formatDateTime(timestamp) {
+                    const date = new Date(timestamp);
+                    date.setMinutes(date.getMinutes() + 330); // Add 5 hours 30 minutes for SLST (UTC+5:30)
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const month = months[date.getMonth()];
+                    const day = date.getDate();
+                    const year = date.getFullYear();
+
+                    let hours = date.getHours();
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12; // Hour '0' should be '12'
+                    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+                    return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+                }
+
+                // Function to create a bar chart for pollutants using Chart.js
+                function createPollutantChart(elementId, data, pollutant, label, color) {
+                    const container = document.getElementById(elementId);
+                    container.innerHTML = '';
+                    const canvas = document.createElement('canvas');
+                    container.appendChild(canvas);
+
+                    const last24Hours = data.filter(reading => {
+                        const readingTime = new Date(reading.recordedAt);
+                        return (new Date() - readingTime) <= 24 * 60 * 60 * 1000; // Last 24 hours
+                    });
+
+                    const chartData = last24Hours.map(reading => reading[pollutant] !== null && reading[pollutant] !== undefined ? reading[pollutant] : 0);
+
+                    new Chart(canvas, {
+                        type: 'bar',
+                        data: {
+                            labels: last24Hours.map(r => new Date(r.recordedAt).toLocaleTimeString()),
+                            datasets: [{
+                                label: label,
+                                data: chartData,
+                                backgroundColor: color,
+                                borderColor: color,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: { beginAtZero: true, display: false },
+                                x: { display: false }
+                            },
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            maintainAspectRatio: false
+                        }
+                    });
+                }
+
+                // Function to create a heatmap for yearly data
+                function createYearlyHeatmap(elementId, data) {
+                    const container = document.getElementById(elementId);
+                    container.innerHTML = '';
+
+                    // Month labels
+                    const monthsDiv = document.createElement('div');
+                    monthsDiv.style.display = 'flex';
+                    monthsDiv.style.marginBottom = '5px';
+
+                    const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+                    months.forEach(month => {
+                        const monthLabel = document.createElement('div');
+                        monthLabel.textContent = month;
+                        monthLabel.style.flex = '1';
+                        monthLabel.style.fontSize = '12px';
+                        monthLabel.style.color = '#666';
+                        monthsDiv.appendChild(monthLabel);
+                    });
+                    container.appendChild(monthsDiv);
+
+                    // Calculate daily averages
+                    const dailyAverages = {};
+                    data.forEach(r => {
+                        const date = new Date(r.recordedAt);
+                        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                        if (!dailyAverages[key]) {
+                            dailyAverages[key] = { total: 0, count: 0 };
+                        }
+                        dailyAverages[key].total += (r.pm25 !== null && r.pm25 !== undefined ? r.pm25 : 0);
+                        dailyAverages[key].count += 1;
+                    });
+
+                    // Determine the earliest date in the data
+                    const earliestDate = data.length > 0 ? new Date(Math.min(...data.map(r => new Date(r.recordedAt)))) : new Date();
+                    const today = new Date();
+                    const startDate = new Date(Math.max(earliestDate, new Date(today.getFullYear(), today.getMonth() - 11, 1)));
+
+                    const heatmapData = [];
+                    for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+                        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                        const avg = dailyAverages[key] ? dailyAverages[key].total / dailyAverages[key].count : 0;
+                        heatmapData.push({ date: new Date(d), value: avg });
+                    }
+
+                    // Create the heatmap grid
+                    const heatmapDiv = document.createElement('div');
+                    heatmapDiv.style.display = 'flex';
+                    heatmapDiv.style.flexDirection = 'column';
+                    heatmapDiv.style.height = '100px';
+
+                    const daysInMonth = [];
+                    for (let m = startDate.getMonth(); m <= today.getMonth() + 12; m++) {
+                        const monthDate = new Date(startDate.getFullYear(), m % 12, 1);
+                        daysInMonth.push(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate());
+                    }
+
+                    const maxDays = Math.max(...daysInMonth);
+                    for (let row = 0; row < 5; row++) {
+                        const rowDiv = document.createElement('div');
+                        rowDiv.style.display = 'flex';
+                        rowDiv.style.flex = '1';
+                        rowDiv.style.marginBottom = '2px';
+
+                        for (let col = 0; col < 31; col++) {
+                            const monthIndex = Math.floor(col / 2.6);
+                            const dayIndex = col % 31;
+                            const date = new Date(startDate.getFullYear(), startDate.getMonth() + monthIndex, dayIndex + 1);
+                            if (date > today) {
+                                continue; // Skip future dates
+                            }
+
+                            const entry = heatmapData.find(d => d.date.getDate() === (dayIndex + 1) && d.date.getMonth() === (date.getMonth()) && d.date.getFullYear() === date.getFullYear());
+                            const value = entry ? entry.value : 0;
+
+                            const cell = document.createElement('div');
+                            cell.style.flex = '1';
+                            cell.style.marginRight = '2px';
+                            cell.style.height = '100%';
+                            cell.style.backgroundColor = value === 0 ? '#eee' : getAqiColorForValue(value);
+                            rowDiv.appendChild(cell);
+                        }
+
+                        heatmapDiv.appendChild(rowDiv);
+                    }
+
+                    container.appendChild(heatmapDiv);
+                }
+
+                // Helper function to get color based on PM2.5 value for heatmap
+                function getAqiColorForValue(value) {
+                    if (value <= 12) return '#00FF00'; // Good
+                    if (value <= 35) return '#FFFF00'; // Moderate
+                    if (value <= 55) return '#FFA500'; // Unhealthy for Sensitive Groups
+                    if (value <= 150) return '#FF0000'; // Unhealthy
+                    if (value <= 250) return '#800080'; // Very Unhealthy
+                    return '#7E0023'; // Hazardous
+                }
+
+                // Function to show popup when hovering over a marker
+                function showPopup(event, marker) {
+                    activeMarker = marker;
+
+                    // Get marker data
+                    const { sensorId, location, aqi, recordedAt } = marker.sensorData;
+
+                    // Set popup content
+                    document.getElementById('popupLocation').textContent = location;
+                    document.getElementById('popupAqi').textContent = aqi;
+                    document.getElementById('popupCategory').textContent = getAqiCategory(aqi);
+                    document.getElementById('popupFace').textContent = getAqiFace(aqi);
+
+                    // Set time information
+                    document.getElementById('popupTime').textContent = getTimeDifference(recordedAt);
+                    document.getElementById('popupDateTime').textContent = formatDateTime(recordedAt);
+
+                    // Set background color based on AQI value
+                    let bgColor = getAqiColor(aqi);
+                    document.querySelector('.popup-header').style.backgroundColor = bgColor;
+
+                    // Fetch historical data for this sensor
+                    const sensorHistory = history[sensorId] || [];
+
+                    // Create the pollutant charts
+                    createPollutantChart('pm25Chart', sensorHistory, 'pm25', 'PM2.5 (µg/m³)', '#FF9933');
+                    createPollutantChart('pm10Chart', sensorHistory, 'pm10', 'PM10 (µg/m³)', '#FFDE33');
+                    createPollutantChart('o3Chart', sensorHistory, 'o3', 'O3 (ppb)', '#00C4B4');
+                    createPollutantChart('no2Chart', sensorHistory, 'no2', 'NO2 (ppb)', '#FF69B4');
+                    createPollutantChart('so2Chart', sensorHistory, 'so2', 'SO2 (ppb)', '#4682B4');
+                    createPollutantChart('coChart', sensorHistory, 'co', 'CO (ppm)', '#FFD700');
+
+                    // Create the yearly heatmap
+                    createYearlyHeatmap('yearlyPM25Chart', sensorHistory);
+
+                    // Set history link
+                    document.getElementById('popupHistoryLink').href = `/Home/SensorHistory?sensorId=${sensorId}`;
+
+                    // Position popup near marker
+                    const latlng = marker.getLatLng();
+                    const point = map.latLngToContainerPoint(latlng);
+                    const mapRect = map.getContainer().getBoundingClientRect();
+                    const popupRect = popup.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight;
+                    const viewportWidth = window.innerWidth;
+
+                    let left = point.x + mapRect.left - (popupRect.width / 2);
+                    let top = point.y + mapRect.top - popupRect.height - 20;
+
+                    // Clamp position
+                    if (left < 10) left = 10;
+                    if (left + popupRect.width > viewportWidth - 10) left = viewportWidth - popupRect.width - 10;
+                    if (top < 10) top = point.y + mapRect.top + 20;
+                    if (top + popupRect.height > viewportHeight - 10) top = viewportHeight - popupRect.height - 10;
+
+                    popup.style.left = left + 'px';
+                    popup.style.top = top + 'px';
+
+                    // Show popup
+                    popup.style.display = 'block';
+
+                    // Add event listener to close button
+                    document.getElementById('closePopup').addEventListener('click', function () {
+                        popup.style.display = 'none';
+                    });
+                }
+
+                // Function to hide popup when mouse leaves marker and popup
+                function hidePopupIfNotHovered() {
+                    setTimeout(() => {
+                        const isHoveringPopup = popup.matches(':hover');
+                        const isHoveringMarker = activeMarker && activeMarker._icon && activeMarker._icon.matches(':hover');
+
+                        if (!isHoveringPopup && !isHoveringMarker) {
+                            popup.style.display = 'none';
+                        }
+                    }, 100);
+                }
+
+                // Function to create markers on the map
+                function createMarkers(map, sensorData) {
+                    console.log('Creating markers for sensors:', sensorData);
+                    sensorData.forEach(sensor => {
+                        console.log(`Adding marker for sensor ${sensor.sensorId} at [${sensor.lat}, ${sensor.lon}] with AQI ${sensor.aqi}`);
+                        const markerIcon = L.divIcon({
+                            className: 'sensor-marker',
+                            html: `<div class="marker-circle" style="background-color: ${getAqiColor(sensor.aqi)};">${sensor.aqi}</div>`,
+                            iconSize: [40, 40]
+                        });
+
+                        const marker = L.marker([sensor.lat, sensor.lon], { icon: markerIcon }).addTo(map);
+
+                        marker.sensorData = {
+                            sensorId: sensor.sensorId,
+                            location: sensor.location,
+                            aqi: sensor.aqi,
+                            recordedAt: sensor.recordedAt,
+                            pm25: sensor.pm25,
+                            pm10: sensor.pm10,
+                            o3: sensor.o3,
+                            no2: sensor.no2,
+                            so2: sensor.so2,
+                            co: sensor.co
+                        };
+
+                        marker.on('mouseover', (e) => showPopup(e, marker));
+                        marker.on('mouseout', hidePopupIfNotHovered);
+                        marker.on('click', (e) => showPopup(e, marker));
+                    });
+                }
+
+                // Add AQI legend to the map
+                var legend = L.control({ position: 'bottomright' });
+                legend.onAdd = function (map) {
+                    var div = L.DomUtil.create('div', 'legend');
+                    div.innerHTML = '<h4>AQI Legend</h4>';
+                    thresholds.forEach(function (t) {
+                        div.innerHTML += `<i style="background: ${t.color}"></i> ${t.category} (${t.minAqi}-${t.maxAqi})<br>`;
+                    });
+                    return div;
+                };
+
+                // Now create markers and add the legend
+                createMarkers(map, sensors);
+                legend.addTo(map);
+
+                window.mapInitialized = true; // Prevent re-initialization
+            } catch (error) {
+                console.error('Error initializing map:', error);
+            }
+        });
+    }
+</script>
