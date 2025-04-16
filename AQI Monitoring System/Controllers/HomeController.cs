@@ -335,6 +335,37 @@ namespace AQI_Monitoring_System.Controllers
 
             // Check for alerts
             var thresholds = _dbContext.AlertThresholds.ToList();
+            ViewBag.Thresholds = thresholds;
+
+            // Fetch historical data for each sensor (for the charts in the map popup)
+            var historyData = new Dictionary<string, List<object>>();
+            foreach (var reading in recentReadings)
+            {
+                if (reading != null && reading.Sensor != null && !historyData.ContainsKey(reading.SensorId))
+                {
+                    var sensorHistory = _dbContext.AqiReadings
+                        .Where(r => r.SensorId == reading.SensorId)
+                        .OrderByDescending(r => r.RecordedAt)
+                        .Take(50) // Limit to the last 50 readings for performance
+                        .Select(r => new
+                        {
+                            recordedAt = r.RecordedAt.ToString("o"),
+                            pm25 = r.Pm25,
+                            pm10 = r.Pm10,
+                            o3 = r.O3,
+                            no2 = r.No2,
+                            so2 = r.So2,
+                            co = r.Co
+                        })
+                        .AsEnumerable() // Switch to LINQ-to-Objects to cast to object
+                        .Select(x => (object)x)
+                        .ToList();
+                    historyData[reading.SensorId] = sensorHistory;
+                }
+            }
+            ViewBag.HistoryData = historyData; // Required for the map partial
+
+            // Check for alerts
             var alerts = recentReadings
                 .Where(r => r.Sensor != null && r.Sensor.IsActive)
                 .Select(r => new
