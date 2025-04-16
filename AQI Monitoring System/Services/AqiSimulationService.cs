@@ -1,4 +1,4 @@
-﻿// Services/AqiSimulationService.cs (Updated)
+﻿// Services/AqiSimulationService.cs 
 using AQI_Monitoring_System.Data;
 using AQI_Monitoring_System.Models;
 using Microsoft.Extensions.DependencyInjection;
