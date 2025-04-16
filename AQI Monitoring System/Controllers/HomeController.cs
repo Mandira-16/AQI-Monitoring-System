@@ -406,7 +406,7 @@ namespace AQI_Monitoring_System.Controllers
                 return View(model);
             }
 
-            // Validation
+            // Validation for AQI
             if (model.FrequencyMinutes < 1 || model.FrequencyMinutes > 60)
             {
                 ModelState.AddModelError("FrequencyMinutes", "Frequency must be between 1 and 60 minutes.");
@@ -420,6 +420,37 @@ namespace AQI_Monitoring_System.Controllers
             if (model.VariationRange < 0 || model.VariationRange > 500)
             {
                 ModelState.AddModelError("VariationRange", "Variation range must be between 0 and 500.");
+                return View(model);
+            }
+            // Validations for pollutant fields
+            if (model.BaselinePm25 <= 0 || model.VariationPm25 <= 0)
+            {
+                ModelState.AddModelError("BaselinePm25", "PM2.5 baseline and variation must be greater than 0.");
+                return View(model);
+            }
+            if (model.BaselinePm10 <= 0 || model.VariationPm10 <= 0)
+            {
+                ModelState.AddModelError("BaselinePm10", "PM10 baseline and variation must be greater than 0.");
+                return View(model);
+            }
+            if (model.BaselineO3 <= 0 || model.VariationO3 <= 0)
+            {
+                ModelState.AddModelError("BaselineO3", "O3 baseline and variation must be greater than 0.");
+                return View(model);
+            }
+            if (model.BaselineNo2 <= 0 || model.VariationNo2 <= 0)
+            {
+                ModelState.AddModelError("BaselineNo2", "NO2 baseline and variation must be greater than 0.");
+                return View(model);
+            }
+            if (model.BaselineSo2 <= 0 || model.VariationSo2 <= 0)
+            {
+                ModelState.AddModelError("BaselineSo2", "SO2 baseline and variation must be greater than 0.");
+                return View(model);
+            }
+            if (model.BaselineCo <= 0 || model.VariationCo <= 0)
+            {
+                ModelState.AddModelError("BaselineCo", "CO baseline and variation must be greater than 0.");
                 return View(model);
             }
 
