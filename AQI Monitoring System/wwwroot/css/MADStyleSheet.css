@@ -341,14 +341,9 @@ td.aqi-hazardous {
     border-radius: 8px;
 }
 
-/* Top decorative line for visual interest */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-    z-index: 1000;
+/*
+#map {
+    height: 400px;
+    width: 100%;
 }
+*/
