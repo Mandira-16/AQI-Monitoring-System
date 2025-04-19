@@ -84,9 +84,18 @@
 						</div>
 						<!-- Back Button -->
 						<div class="text-center mt-3 mb-5">
-							<a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
-								<i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-							</a>
+							@if (User.IsInRole("SystemAdmin"))
+							{
+								<a asp-controller="Home" asp-action="SystemAdminDashboard" class="btn btn-outline-primary">
+									<i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+								</a>
+							}
+							else
+							{
+								<a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
+									<i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+								</a>
+							}
 						</div>
 					</div>
 				</div>
