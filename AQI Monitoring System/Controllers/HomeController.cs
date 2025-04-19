@@ -31,6 +31,50 @@ namespace AQI_Monitoring_System.Controllers
             _simulationConfigService = simulationConfigService;
         }
 
+        [HttpGet]
+        public IActionResult CheckAuthentication()
+        {
+            _logger.LogInformation("CheckAuthentication called, isAuthenticated: {IsAuthenticated}", User.Identity.IsAuthenticated);
+            return Json(new { isAuthenticated = User.Identity.IsAuthenticated });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RefreshSession()
+        {
+            _logger.LogInformation("RefreshSession called");
+            // Update last activity timestamp
+            HttpContext.Session.SetString("LastActivity", DateTime.UtcNow.ToString("o"));
+            return Json(new { success = true });
+        }
+
+        // Helper method to check session timeout and update last activity
+        private IActionResult CheckSessionTimeout()
+        {
+            var lastActivityValue = HttpContext.Session.GetString("LastActivity");
+            _logger.LogInformation("Checking session timeout, last activity: {LastActivity}", lastActivityValue);
+            if (lastActivityValue != null)
+            {
+                var lastActivityTime = DateTime.Parse(lastActivityValue);
+                var currentTime = DateTime.UtcNow;
+                var inactiveDuration = currentTime - lastActivityTime;
+                if (inactiveDuration.TotalMinutes > 30)
+                {
+                    _logger.LogWarning("Session timed out, redirecting to login");
+                    HttpContext.Session.Clear();
+                    HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    TempData["ErrorMessage"] = "Your session has timed out due to inactivity. Please log in again.";
+                    return RedirectToAction("Login");
+                }
+            }
+            HttpContext.Session.SetString("LastActivity", DateTime.UtcNow.ToString("o"));
+            return null;
+
+            // Update last activity timestamp
+            HttpContext.Session.SetString("LastActivity", DateTime.UtcNow.ToString("o"));
+            return null;
+        }
+
         public IActionResult Index()
         {
             try
@@ -255,6 +299,10 @@ namespace AQI_Monitoring_System.Controllers
             {
                 return RedirectToAction("MonitorAdminDashboard", "Home");
             }
+            else if (user.Role == "SystemAdmin")
+            {
+                return RedirectToAction("SystemAdminDashboard", "Home");
+            }
             else
             {
                 return RedirectToAction("Index", "Home"); // For now, redirect non-Admins to the Index page
@@ -263,7 +311,7 @@ namespace AQI_Monitoring_System.Controllers
 
 
         // GET: /Home/Register
-        [Authorize(Roles = "Admin")] // Restrict to Admins only
+        [Authorize(Roles = "Admin,SystemAdmin")] // Restrict to Admins and SystemAdmin only
         public IActionResult Register()
         {
             _logger.LogInformation("Register GET action called"); // Added this line to test
@@ -272,7 +320,7 @@ namespace AQI_Monitoring_System.Controllers
 
         // POST: /Home/Register
         [HttpPost]
-        [Authorize(Roles = "Admin")] // Restrict to Admins only
+        [Authorize(Roles = "Admin,SystemAdmin")] // Restrict to Admins only
         [ValidateAntiForgeryToken]
         public IActionResult Register(RegisterViewModel model)
         {
@@ -320,6 +368,13 @@ namespace AQI_Monitoring_System.Controllers
         [Authorize(Roles = "Admin")]
         public IActionResult MonitorAdminDashboard()
         {
+            // Check for session timeout
+            var timeoutResult = CheckSessionTimeout();
+            if (timeoutResult != null)
+            {
+                return timeoutResult;
+            }
+
             // Fetch all sensors for the "All Registered Sensors" table
             var sensors = _sensorService.GetAllSensors();
             ViewBag.ActiveSensorsCount = sensors?.Count(s => s.IsActive) ?? 0;
@@ -380,15 +435,31 @@ namespace AQI_Monitoring_System.Controllers
 
             ViewBag.RecentReadings = recentReadings;
             ViewBag.Alerts = alerts;
+            ViewBag.SessionToken = HttpContext.Session.Id;
             return View(sensors);
+        }
+
+        [Authorize(Roles = "SystemAdmin")]
+        public IActionResult SystemAdminDashboard()
+        {
+            // Check for session timeout
+            var timeoutResult = CheckSessionTimeout();
+            if (timeoutResult != null)
+            {
+                return timeoutResult;
+            }
+            ViewBag.SessionToken = HttpContext.Session.Id;
+            return View();
         }
 
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
+            // Clear the session
+            HttpContext.Session.Clear();
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login", "Home");
+            return RedirectToAction("Login", "Home", new { t = DateTime.UtcNow.Ticks });
         }
 
         [Authorize(Roles = "Admin")]
@@ -584,14 +655,14 @@ namespace AQI_Monitoring_System.Controllers
 
         // In HomeController.cs
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,SystemAdmin")]
         public IActionResult ManageUsers()
         {
             var users = _userService.GetAllUsers(); // Assuming this method exists in IUserService
             return View(users);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,SystemAdmin")]
         public IActionResult EditUser(int id)
         {
             var user = _userService.GetUserById(id); // Assuming this method exists
@@ -603,7 +674,7 @@ namespace AQI_Monitoring_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,SystemAdmin")]
         [ValidateAntiForgeryToken]
         public IActionResult EditUser(int id, string username, string email, string role)
         {
@@ -624,7 +695,7 @@ namespace AQI_Monitoring_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,SystemAdmin")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteUser(int id)
         {
@@ -689,10 +760,16 @@ namespace AQI_Monitoring_System.Controllers
             return View(thresholds);
         }
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "SystemAdmin")]
         [ValidateAntiForgeryToken]
         public IActionResult PurgeOldReadings()
         {
+            var timeoutResult = CheckSessionTimeout();
+            if (timeoutResult != null)
+            {
+                return timeoutResult;
+            }
+
             var cutoff = DateTime.UtcNow.AddMonths(-1); // Readings older than 1 month
             var oldReadings = _dbContext.AqiReadings.Where(r => r.RecordedAt < cutoff);
             int count = oldReadings.Count();
@@ -706,7 +783,14 @@ namespace AQI_Monitoring_System.Controllers
             {
                 TempData["SuccessMessage"] = "No readings older than 1 month to purge.";
             }
-            return RedirectToAction("MonitorAdminDashboard");
+            return RedirectToAction("SystemAdminDashboard");
+        }
+
+        [HttpGet]
+        public IActionResult GetSessionId()
+        {
+            _logger.LogInformation("GetSessionId called");
+            return Json(new { sessionId = HttpContext.Session.Id });
         }
     }
 }
