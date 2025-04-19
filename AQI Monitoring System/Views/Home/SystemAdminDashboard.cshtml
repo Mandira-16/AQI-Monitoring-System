@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "System Admin Dashboard";
+    Layout = "_Layout";
+}
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="stylesheet" href="~/css/MADStyleSheet.css" />
+
+<div class="container dashboard-container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Admin Info Section -->
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h4 class="text-center m-0">System Admin Dashboard</h4>
+                </div>
+                <div class="card-body">
+                    <div class="admin-info-section">
+                        <h5>Welcome, @(User.Identity?.Name ?? "System Admin")! You are logged in as a System Admin.</h5>
+                        <div class="admin-actions">
+                            <div class="d-grid btn-action">
+                                <a asp-controller="Home" asp-action="Register" class="btn btn-primary">
+                                    <i class="bi bi-person-plus me-2"></i>Register New User
+                                </a>
+                            </div>
+                            <div class="d-grid btn-action">
+                                <a asp-controller="Home" asp-action="ManageUsers" class="btn btn-info">
+                                    <i class="bi bi-people me-2"></i>Manage Users
+                                </a>
+                            </div>
+                            <div class="d-grid btn-action">
+                                <form asp-controller="Home" asp-action="PurgeOldReadings" method="post" onsubmit="return confirm('Are you sure you want to purge readings older than 1 month?');">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-2"></i>Purge Old Readings
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="d-grid btn-action">
+                                <form asp-controller="Home" asp-action="Logout" method="post">
+                                    <button type="submit" class="btn btn-secondary">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Success/Error Messages -->
+                        <div class="notification-section">
+                            @if (TempData["SuccessMessage"] != null)
+                            {
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                                </div>
+                            }
+                            @if (TempData["ErrorMessage"] != null)
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<input type="hidden" id="sessionToken" value="@ViewBag.SessionToken" />
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        window.__RequestVerificationToken = '@token';
+    </script>
+    <script src="~/js/site.js"></script>
+}
