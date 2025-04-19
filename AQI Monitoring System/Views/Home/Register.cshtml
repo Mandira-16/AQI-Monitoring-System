@@ -58,8 +58,8 @@
                                 <label asp-for="Role" class="form-label">Role</label>
                                 <select asp-for="Role" class="form-control">
                                     <option value="">Select a role</option>
-                                    <option value="User">User</option>
                                     <option value="Admin">Admin</option>
+                                    <option value="SystemAdmin">System Admin</option>
                                 </select>
                                 <div id="roleError" class="field-validation-error"></div>
                                 <span asp-validation-for="Role" class="field-validation-error"></span>
@@ -68,9 +68,18 @@
                                 <button type="submit" class="btn btn-primary" id="registerButton">
                                     <i class="bi bi-person-plus-fill me-2"></i>Register
                                 </button>
-                                <a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
-                                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
-                                </a>
+                                @if (User.IsInRole("SystemAdmin"))
+                                {
+                                    <a asp-controller="Home" asp-action="SystemAdminDashboard" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Home" asp-action="MonitorAdminDashboard" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                                    </a>
+                                }
                             </div>
                         </form>
                     </div>
