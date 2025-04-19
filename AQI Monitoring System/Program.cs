@@ -26,12 +26,31 @@ builder.Services.AddScoped<ISimulationConfigService, SimulationConfigService>();
 builder.Services.AddSingleton<AqiSimulationService>(); // Explicitly register as injectable service
 builder.Services.AddHostedService(provider => provider.GetRequiredService<AqiSimulationService>()); // Use the same instance as a hosted service
 
+// Add session services
+builder.Services.AddDistributedMemoryCache();
+// Required for session state
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    // Session timeout after 30 minutes of inactivity
+    options.Cookie.HttpOnly = true;
+    // Prevent client-side access to the session cookie
+    options.Cookie.IsEssential = true;
+    // Required for GDPR compliance
+});
+
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/Home/Login";
         options.AccessDeniedPath = "/Home/Privacy";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        // Cookie expiration matches session timeout
+        options.SlidingExpiration = true; // Reset expiration on activity
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
     });
 
 // Add logging
@@ -49,10 +68,40 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+else
+{
+    app.UseDeveloperExceptionPage();
+    // Enable detailed error pages in development
+}
+
+// Ensure logging is configured
+builder.Services.AddLogging(logging =>
+{
+    logging.AddConsole();
+    logging.AddDebug();
+});
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+// No-cache middleware for all responses
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+    context.Response.Headers["Pragma"] = "no-cache";
+    context.Response.Headers["Expires"] = "0";
+    await next.Invoke();
+});
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+        ctx.Context.Response.Headers["Pragma"] = "no-cache";
+        ctx.Context.Response.Headers["Expires"] = "0";
+    }
+});
 app.UseRouting();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
