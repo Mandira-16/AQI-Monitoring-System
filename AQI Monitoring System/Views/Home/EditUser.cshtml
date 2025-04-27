@@ -1,89 +1,221 @@
 ﻿@model AQI_Monitoring_System.Models.User
-
 @{
     ViewData["Title"] = "Edit User";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
+<link rel="stylesheet" href="~/css/EditUserStyleSheet.css" />
+<div class="container dashboard-container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h4 class="text-center m-0">Edit User</h4>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                        </div>
+                    }
 
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8" />
-    <title>Edit User</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="~/css/EditUserStyleSheet.css" />
-</head>
-<body>
-    <div class="container dashboard-container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card dashboard-card">
-                    <div class="card-header">
-                        <h4 class="text-center m-0">Edit User</h4>
-                    </div>
-                    <div class="card-body">
-                        <!-- Success/Error Messages -->
-                        @if (TempData["SuccessMessage"] != null)
-                        {
-                            <div class="alert alert-success">
-                                <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
-                            </div>
-                        }
-                        @if (TempData["ErrorMessage"] != null)
-                        {
-                            <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
-                            </div>
-                        }
+                    <div class="form-section">
+                        <h5 class="section-heading"><i class="bi bi-person-gear me-2"></i>Edit User Details</h5>
+                        <form asp-controller="Home" asp-action="EditUser" method="post" id="editUserForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Id" />
 
-                        <!-- Edit User Form -->
-                        <div class="form-section">
-                            <h5 class="section-heading"><i class="bi bi-person-gear me-2"></i>Edit User Details</h5>
-                            <form asp-controller="Home" asp-action="EditUser" method="post" id="editUserForm">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" asp-for="Id" />
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="Username" class="form-label">Username</label>
-                                        <input asp-for="Username" class="form-control" required />
-                                        <span asp-validation-for="Username" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="Email" class="form-label">Email</label>
-                                        <input asp-for="Email" class="form-control" type="email" required />
-                                        <span asp-validation-for="Email" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label asp-for="Role" class="form-label">Role</label>
-                                        <select asp-for="Role" class="form-control" required>
-                                            <option value="Admin">Admin</option>
-                                            <option value="User">User</option>
-                                        </select>
-                                        <span asp-validation-for="Role" class="text-danger"></span>
-                                    </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="Username" class="form-label">Username</label>
+                                    <input asp-for="Username" class="form-control" required />
+                                    <span asp-validation-for="Username" class="text-danger"></span>
+                                    <div id="usernameError" class="text-danger"></div>
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="Email" class="form-label">Email</label>
+                                    <input asp-for="Email" class="form-control" type="email" required />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                    <div id="emailError" class="text-danger"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="Role" class="form-label">Role</label>
+                                    <select asp-for="Role" class="form-control" asp-items="@ViewBag.Roles" required>
+                                        <option value="">Select a role</option>
+                                    </select>
+                                    <span asp-validation-for="Role" class="text-danger"></span>
+                                    <div id="roleError" class="text-danger"></div>
+                                </div>
+                            </div>
 
-                                <div class="d-flex btn-action">
-                                    <button type="submit" class="btn btn-success me-2">
-                                        <i class="bi bi-save me-2"></i>Save Changes
-                                    </button>
+                            <div class="d-flex gap-4 justify-content-center mt-4 mb-5">
+                                <button type="submit" class="btn btn-success" id="updateButton">
+                                    <i class="bi bi-save me-2"></i>Save Changes
+                                </button>
+                                @if (User.IsInRole("SystemAdmin"))
+                                {
                                     <a asp-controller="Home" asp-action="ManageUsers" class="btn btn-secondary">
                                         <i class="bi bi-x-circle me-2"></i>Cancel
                                     </a>
-                                </div>
-                            </form>
-                        </div>
+                                }
+                                else if (User.IsInRole("Admin"))
+                                {
+                                    <a asp-controller="Home" asp-action="ManageUsers" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle me-2"></i>Cancel
+                                    </a>
+                                }
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Validation Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+@section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
-</body>
-</html>
+    <script>
+        $(document).ready(function () {
+            const usernameField = $('#Username');
+            const emailField = $('#Email');
+            const roleField = $('#Role');
+            const updateButton = $('#updateButton');
+            let isUsernameUnique = true;
+
+            let touched = {
+                username: false,
+                email: false,
+                role: false
+            };
+
+            usernameField.on('input blur', () => { touched.username = true; validateUsername(); updateButtonState(); });
+            emailField.on('input blur', () => { touched.email = true; validateEmail(); updateButtonState(); });
+            roleField.on('change blur', () => { touched.role = true; validateRole(); updateButtonState(); });
+
+            $('#editUserForm').on('submit', function (e) {
+                touched.username = true;
+                touched.email = true;
+                touched.role = true;
+
+                if (!validateForm()) {
+                    e.preventDefault();
+                }
+            });
+
+            function validateUsername() {
+                if (!touched.username) return true;
+                const username = usernameField.val().trim();
+                const usernameError = $('#usernameError');
+                usernameField.removeClass('is-invalid');
+                usernameError.text('');
+
+                if (username === '') {
+                    usernameField.addClass('is-invalid');
+                    usernameError.text('Username is required');
+                    return false;
+                }
+                if (username.length < 8) {
+                    usernameField.addClass('is-invalid');
+                    usernameError.text('Username must be at least 8 characters long');
+                    return false;
+                }
+
+                $.ajax({
+                    url: '/Home/CheckUsername',
+                    method: 'POST',
+                    data: { username: username },
+                    success: function (response) {
+                        if (response.exists) {
+                            $.ajax({
+                                url: '/Home/GetUserIdByUsername',
+                                method: 'POST',
+                                data: { username: username },
+                                success: function (idResponse) {
+                                    if (idResponse.id !== @Model.Id) {
+                                        usernameField.addClass('is-invalid');
+                                        usernameError.text('Username is already taken');
+                                        isUsernameUnique = false;
+                                    } else {
+                                        isUsernameUnique = true;
+                                    }
+                                    updateButtonState();
+                                }
+                            });
+                        } else {
+                            isUsernameUnique = true;
+                            updateButtonState();
+                        }
+                    }
+                });
+
+                return true;
+            }
+
+            function validateEmail() {
+                if (!touched.email) return true;
+                const email = emailField.val().trim();
+                const emailError = $('#emailError');
+                emailField.removeClass('is-invalid');
+                emailError.text('');
+
+                if (email === '') {
+                    usernameField.addClass('is-invalid');
+                    emailError.text('Email is required');
+                    return false;
+                }
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(email)) {
+                    emailField.addClass('is-invalid');
+                    emailError.text('Invalid email address');
+                    return false;
+                }
+
+                return true;
+            }
+
+            function validateRole() {
+                if (!touched.role) return true;
+                const role = roleField.val();
+                const roleError = $('#roleError');
+                roleField.removeClass('is-invalid');
+                roleError.text('');
+
+                if (role === '') {
+                    roleField.addClass('is-invalid');
+                    roleError.text('Role is required');
+                    return false;
+                }
+
+                const allowedRoles = @Html.Raw(Json.Serialize(ViewBag.AllowedRoleValues));
+                if (!allowedRoles.includes(role)) {
+                    roleField.addClass('is-invalid');
+                    roleError.text('Invalid role selected');
+                    return false;
+                }
+
+                return true;
+            }
+
+            function validateForm() {
+                const isUsernameValid = validateUsername();
+                const isEmailValid = validateEmail();
+                const isRoleValid = validateRole();
+
+                return isUsernameValid && isEmailValid && isRoleValid && isUsernameUnique;
+            }
+
+            function updateButtonState() {
+                const isFormValid = validateForm();
+                updateButton.prop('disabled', !isFormValid);
+            }
+        });
+    </script>
+}
