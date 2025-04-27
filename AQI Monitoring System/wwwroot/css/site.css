@@ -90,6 +90,10 @@ body {
     color: white;
 }
 
+    .footer p {
+        color: white;
+    }
+
     .footer a {
         color: #bde3fc;
         text-decoration: none;
