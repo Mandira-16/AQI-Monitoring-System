@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Security.Claims;
@@ -237,7 +238,7 @@ namespace AQI_Monitoring_System.Controllers
         public IActionResult Login()
         {
             ViewData["ActivePage"] = "Login";
-            return View();
+            return View(new LoginViewModel());
         }
 
         // POST: /Home/Login
@@ -324,6 +325,18 @@ namespace AQI_Monitoring_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Register(RegisterViewModel model)
         {
+			var allowedRoles = new List<string>();
+			if (User.IsInRole("SystemAdmin"))
+			{
+				allowedRoles.Add("Admin");
+				allowedRoles.Add("SystemAdmin");
+			}
+			else if (User.IsInRole("Admin"))
+			{
+				allowedRoles.Add("Admin");
+			}
+			ViewBag.Roles = new SelectList(allowedRoles, allowedRoles.FirstOrDefault());
+			
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -336,8 +349,20 @@ namespace AQI_Monitoring_System.Controllers
                 return View(model);
             }
 
-            // Create new user (assuming _userService has a method to add a user)
-            var user = new User
+			// Validate role based on current user's role
+			if (User.IsInRole("Admin") && model.Role != "Admin")
+			{
+				ModelState.AddModelError("Role", "You can only register users with the Admin role.");
+				return View(model);
+			}
+			if (!new[] { "Admin", "SystemAdmin" }.Contains(model.Role))
+			{
+				ModelState.AddModelError("Role", "Invalid role selected.");
+				return View(model);
+			}
+
+			// Create new user (assuming _userService has a method to add a user)
+			var user = new User
             {
                 Username = model.Username,
                 Email = model.Email,
@@ -346,11 +371,33 @@ namespace AQI_Monitoring_System.Controllers
                 Role = model.Role
             };
 
-            _userService.AddUser(user); // Assuming you have this method in IUserService
+			try
+			{
+				_userService.AddUser(user); // Add user to the database
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error registering user: {Username}", model.Username);
+				ModelState.AddModelError("", "An error occurred while registering. Please try again.");
+				return View(model);
+			}
 
-            TempData["SuccessMessage"] = "Registration successful! Please log in.";
-            return RedirectToAction("Login", "Home");
-        }
+			// Redirect based on role
+			if (user.Role == "Admin")
+			{
+				TempData["SuccessMessage"] = "Registration successful! New Member Added.";
+				return RedirectToAction("MonitorAdminDashboard", "Home");
+			}
+			else if (user.Role == "SystemAdmin")
+			{
+				TempData["SuccessMessage"] = "Registration successful!  New Member Added.";
+				return RedirectToAction("SystemAdminDashboard", "Home");
+			}
+
+			// Default case for other roles
+			TempData["SuccessMessage"] = "Registration successful! Please log in.";
+			return RedirectToAction("Login", "Home");
+		}
 
         [HttpPost]
         public IActionResult CheckUsername(string username)
