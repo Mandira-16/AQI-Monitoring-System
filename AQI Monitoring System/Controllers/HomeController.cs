@@ -709,37 +709,99 @@ namespace AQI_Monitoring_System.Controllers
             return View(users);
         }
 
-        [Authorize(Roles = "Admin,SystemAdmin")]
-        public IActionResult EditUser(int id)
-        {
-            var user = _userService.GetUserById(id); // Assuming this method exists
-            if (user == null)
-            {
-                return NotFound();
-            }
-            return View(user);
-        }
+		[Authorize(Roles = "Admin,SystemAdmin")]
+		public IActionResult EditUser(int id)
+		{
+			var user = _userService.GetUserById(id);
+			if (user == null)
+			{
+				return NotFound();
+			}
 
-        [HttpPost]
-        [Authorize(Roles = "Admin,SystemAdmin")]
-        [ValidateAntiForgeryToken]
-        public IActionResult EditUser(int id, string username, string email, string role)
-        {
-            var user = _userService.GetUserById(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
+			var allowedRoles = new List<string>();
+			if (User.IsInRole("SystemAdmin"))
+			{
+				allowedRoles.Add("Admin");
+				allowedRoles.Add("SystemAdmin");
+			}
+			else if (User.IsInRole("Admin"))
+			{
+				allowedRoles.Add("Admin");
+			}
+			ViewBag.Roles = new SelectList(allowedRoles, user.Role);
+			ViewBag.AllowedRoleValues = allowedRoles; // Pass the list of role values
 
-            // Update user properties (password unchanged unless explicitly updated)
-            user.Username = username;
-            user.Email = email;
-            user.Role = role;
+			return View(user);
+		}
 
-            _userService.UpdateUser(user); // Assuming this method exists in IUserService
-            TempData["SuccessMessage"] = "User updated successfully!";
-            return RedirectToAction("ManageUsers");
-        }
+		[HttpPost]
+		[Authorize(Roles = "Admin,SystemAdmin")]
+		[ValidateAntiForgeryToken]
+		public IActionResult EditUser(User model)
+		{
+			var allowedRoles = new List<string>();
+			if (User.IsInRole("SystemAdmin"))
+			{
+				allowedRoles.Add("Admin");
+				allowedRoles.Add("SystemAdmin");
+			}
+			else if (User.IsInRole("Admin"))
+			{
+				allowedRoles.Add("Admin");
+			}
+			ViewBag.Roles = new SelectList(allowedRoles, model.Role);
+			ViewBag.AllowedRoleValues = allowedRoles; // Pass the list of role values
+
+			if (!ModelState.IsValid)
+			{
+				return View(model);
+			}
+
+			var existingUser = _userService.GetUserByUsername(model.Username);
+			if (existingUser != null && existingUser.Id != model.Id)
+			{
+				ModelState.AddModelError("Username", "Username is already taken by another user.");
+				return View(model);
+			}
+
+			if (User.IsInRole("Admin") && model.Role != "Admin")
+			{
+				ModelState.AddModelError("Role", "You can only assign the Admin role.");
+				return View(model);
+			}
+			if (!new[] { "Admin", "SystemAdmin" }.Contains(model.Role))
+			{
+				ModelState.AddModelError("Role", "Invalid role selected.");
+				return View(model);
+			}
+
+			var user = _userService.GetUserById(model.Id);
+			if (user == null)
+			{
+				return NotFound();
+			}
+
+			user.Username = model.Username;
+			user.Email = model.Email;
+			user.Role = model.Role;
+
+			try
+			{
+				_userService.UpdateUser(user);
+				TempData["SuccessMessage"] = "User updated successfully.";
+				if (User.IsInRole("SystemAdmin"))
+				{
+					return RedirectToAction("SystemAdminDashboard", "Home");
+				}
+				return RedirectToAction("MonitorAdminDashboard", "Home");
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Error updating user: {Username}", model.Username);
+				TempData["ErrorMessage"] = "An error occurred while updating the user. Please try again.";
+				return View(model);
+			}
+		}
 
         [HttpPost]
         [Authorize(Roles = "Admin,SystemAdmin")]
